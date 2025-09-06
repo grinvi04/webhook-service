@@ -78,13 +78,20 @@ This project is a robust, scalable, and production-ready webhook processing serv
 This is the simplest way to run the entire application stack (web server, worker, and Redis).
 
 ```bash
-docker-compose up --build
+docker-compose up --build -d
+```
+
+After starting the services, you need to apply database migrations.
+
+**Apply Database Migrations (inside Docker container):**
+```bash
+docker-compose exec web alembic upgrade head
 ```
 
 The service will be available at the following endpoints:
 - **Application**: `http://localhost:8000`
 - **Admin UI**: `http://localhost:8000/admin`
-- **Health Check**: `http://localhost:8000/health`
+- **Health Check**: `http://localhost:8000/health` (Should return `{"status": "ok"}` after migrations)
 - **Metrics**: `http://localhost:8000/metrics`
 - **API Docs**: `http://localhost:8000/docs`
 
@@ -132,13 +139,15 @@ pre-commit install
 
 ### Running Tests
 
+Integration tests now use `fastapi.testclient.TestClient` and are synchronous.
+
 To run the full test suite:
 
 ```bash
 pytest
 ```
 
-## Database Migrations
+### Database Migrations
 
 This project uses Alembic to manage database schema changes.
 
@@ -151,3 +160,30 @@ This project uses Alembic to manage database schema changes.
     ```bash
     alembic upgrade head
     ```
+
+## Monitoring with Prometheus
+
+The service exposes Prometheus metrics at the `/metrics` endpoint using `prometheus-fastapi-instrumentator`.
+
+To configure Prometheus to scrape these metrics:
+
+1.  **Ensure `webhook-service` is running** (e.g., via `docker-compose up -d`).
+2.  **Configure `monitoring/prometheus.yml`**:
+    Add the following `scrape_config` to your `prometheus.yml` file. The `web` service name is used as the target host within the Docker network.
+
+    ```yaml
+    # monitoring/prometheus.yml (example snippet)
+    scrape_configs:
+      - job_name: 'webhook-service'
+        static_configs:
+          - targets: ['web:80'] # 'web' is the service name in docker-compose.yml, 80 is the internal container port
+    ```
+    *(Note: The provided `monitoring/prometheus.yml` already contains this configuration.)*
+
+3.  **Restart Prometheus** (if already running) to pick up configuration changes:
+    ```bash
+    docker-compose restart prometheus
+    ```
+
+4.  **Verify in Prometheus UI**:
+    Open your browser to `http://localhost:9090` (Prometheus UI) and navigate to "Status" -> "Targets". You should see `webhook-service` listed as "UP".
