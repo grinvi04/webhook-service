@@ -1,0 +1,7 @@
+global:
+  scrape_interval: 15s # By default, scrape targets every 15 seconds.
+
+scrape_configs:
+  - job_name: 'webhook-service'
+    static_configs:
+      - targets: ['web:80'] # 'web' is the service name in docker-compose.yml

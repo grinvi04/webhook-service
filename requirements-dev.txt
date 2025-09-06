@@ -1,0 +1,8 @@
+pytest
+pytest-mock
+httpx  # For async testing of the FastAPI app
+pytest-asyncio # For async tests
+
+# For Code Quality & DX
+ruff
+pre-commit

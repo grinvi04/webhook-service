@@ -1,0 +1,10 @@
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+# See https://docs.astral.sh/ruff/rules/ for a full list of rules
+select = ["E", "F", "W", "I", "UP"]
+ignore = []
+
+[tool.ruff.format]
+quote-style = "double"

@@ -1,0 +1,19 @@
+fastapi
+uvicorn[standard]
+sqlalchemy[asyncio]
+pydantic
+pydantic-settings
+python-dotenv
+psycopg2-binary
+
+# For Celery (Background Jobs)
+celery[redis]
+
+# For Monitoring
+prometheus-fastapi-instrumentator
+
+# For Admin UI
+sqladmin
+
+# For DB Migrations
+alembic
