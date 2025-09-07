@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  web:
+    # In production, we use a pre-built image from a container registry.
+    # Replace this with your actual image name.
+    image: your-container-registry/webhook-service:latest
+    ports:
+      - "8000:80"
+    env_file:
+      - .env
+    depends_on:
+      - redis
+    # Add a restart policy for production
+    restart: always
+
+  worker:
+    # Use the same pre-built image
+    image: your-container-registry/webhook-service:latest
+    command: celery -A app.celery_worker.celery worker --loglevel=info
+    env_file:
+      - .env
+    depends_on:
+      - redis
+    # Add a restart policy for production
+    restart: always
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    # Add a restart policy for production
+    restart: always
+
+  prometheus:
+    image: prom/prometheus:v2.47.2
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    depends_on:
+      - web
+    # Add a restart policy for production
+    restart: always
+
+  grafana:
+    image: grafana/grafana:10.1.5
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    # Add a restart policy for production
+    restart: always

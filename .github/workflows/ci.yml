@@ -23,6 +23,11 @@ jobs:
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
 
+      - name: Lint and Format Check
+        run: |
+          ruff check .
+          ruff format --check .
+
       - name: Run tests with pytest
         env:
           # Populate environment variables from GitHub Actions Secrets
