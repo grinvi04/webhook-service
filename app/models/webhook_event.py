@@ -1,6 +1,8 @@
-from sqlalchemy import Column, Integer, String, JSON, DateTime
+from sqlalchemy import JSON, Column, DateTime, Integer, String
 from sqlalchemy.sql import func
+
 from ..database import Base
+
 
 class WebhookEvent(Base):
     __tablename__ = "webhook_events"

@@ -1,4 +1,5 @@
 import logging
+
 from sqlalchemy.orm import Session
 
 from ..celery_worker import celery
@@ -8,7 +9,8 @@ from ..schemas.github_webhook import GitHubWebhookPayload
 
 logger = logging.getLogger(__name__)
 
-@celery.task(bind=True, max_retries=3, default_retry_delay=60) # bind=True to access self
+
+@celery.task(bind=True, max_retries=3, default_retry_delay=60)
 def process_github_webhook_task(self, payload_dict: dict):
     """
     Celery task to process a GitHub webhook payload.
@@ -18,8 +20,10 @@ def process_github_webhook_task(self, payload_dict: dict):
     payload = GitHubWebhookPayload.model_validate(payload_dict)
 
     try:
-        logger.info(f"Processing GitHub event from {payload.sender.get('login')} for repo {payload.repository.get('full_name')}")
-        
+        sender = payload.sender.get("login")
+        repo = payload.repository.get("full_name")
+        logger.info(f"Processing GitHub event from {sender} for repo {repo}")
+
         # 1. Save the event to DB
         db_event = WebhookEvent(source="github", payload=payload.model_dump())
         db.add(db_event)
