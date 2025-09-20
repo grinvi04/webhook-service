@@ -1,6 +1,8 @@
 # 프로덕션 수준 웹훅 서비스
 
 [![CI](https://github.com/grinvi04/webhook-service/actions/workflows/ci.yml/badge.svg)](https://github.com/grinvi04/webhook-service/actions/workflows/ci.yml)
+![Python](https://img.shields.io/badge/python-3.11+-blue.svg)
+![License](https://img.shields.io/github/license/grinvi04/webhook-service)
 
 이 프로젝트는 Python, FastAPI, Celery, SQLAlchemy로 구축된 견고하고 확장 가능하며 프로덕션 수준의 웹훅 처리 서비스입니다.
 
