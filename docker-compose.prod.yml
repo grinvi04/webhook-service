@@ -4,7 +4,7 @@ services:
   web:
     # In production, we use a pre-built image from a container registry.
     # Replace this with your actual image name.
-    image: your-container-registry/webhook-service:latest
+    image: ghcr.io/${{ github.repository }}:latest
     ports:
       - "8000:80"
     env_file:
@@ -16,7 +16,7 @@ services:
 
   worker:
     # Use the same pre-built image
-    image: your-container-registry/webhook-service:latest
+    image: ghcr.io/${{ github.repository }}:latest
     command: celery -A app.celery_worker.celery worker --loglevel=info
     env_file:
       - .env
