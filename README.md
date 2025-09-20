@@ -98,7 +98,7 @@ docker-compose exec web alembic upgrade head
 - **관리자 UI**: `http://localhost:8000/admin`
 - **상태 확인**: `http://localhost:8000/health` (마이그레이션 후 `{"status": "ok"}`를 반환해야 함)
 - **메트릭**: `http://localhost:8000/metrics`
-- **API 문서**: `http://localhost:8000/8000/docs`
+- **API 문서**: `http://localhost:8000/docs`
 
 ### 3. 로컬 개발 (Docker 없이)
 
