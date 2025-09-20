@@ -1,6 +1,6 @@
 # 프로덕션 수준 웹훅 서비스
 
-[![CI](https://github.com/<your-github-username>/<your-repo-name>/actions/workflows/ci.yml/badge.svg)](https://github.com/<your-github-username>/<your-repo-name>/actions/workflows/ci.yml)
+[![CI](https://github.com/grinvi04/webhook-service/actions/workflows/ci.yml/badge.svg)](https://github.com/grinvi04/webhook-service/actions/workflows/ci.yml)
 
 이 프로젝트는 Python, FastAPI, Celery, SQLAlchemy로 구축된 견고하고 확장 가능하며 프로덕션 수준의 웹훅 처리 서비스입니다.
 
@@ -98,7 +98,7 @@ docker-compose exec web alembic upgrade head
 - **관리자 UI**: `http://localhost:8000/admin`
 - **상태 확인**: `http://localhost:8000/health` (마이그레이션 후 `{"status": "ok"}`를 반환해야 함)
 - **메트릭**: `http://localhost:8000/metrics`
-- **API 문서**: `http://localhost:8000/docs`
+- **API 문서**: `http://localhost:8000/8000/docs`
 
 ### 3. 로컬 개발 (Docker 없이)
 
