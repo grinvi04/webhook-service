@@ -13,4 +13,3 @@ class GitHubWebhookPayload(BaseModel):
     sender: dict[str, Any]
     repository: dict[str, Any]
     # Add other common fields as needed
-
