@@ -1,11 +1,16 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
+import psycopg2 # Explicitly import psycopg2
 
 from .config import settings
 
 # Using synchronous engine for Celery tasks and Alembic
-sync_db_url = settings.database_url.replace("sqlite+aiosqlite", "sqlite+pysqlite")
-engine = create_engine(sync_db_url)
+# The DATABASE_URL should now directly point to PostgreSQL
+engine = create_engine(
+    settings.database_url,
+    connect_args={"options": "-c timezone=utc"}, # Ensure timezone is handled consistently
+    pool_pre_ping=True # Ping database connections before use
+)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

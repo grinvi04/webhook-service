@@ -11,6 +11,7 @@ services:
       - .env
     depends_on:
       - redis
+      - db # Add dependency on the new db service
 
   worker:
     build: .
@@ -21,11 +22,23 @@ services:
       - .env
     depends_on:
       - redis
+      - db # Add dependency on the new db service
 
   redis:
     image: redis:7-alpine
     ports:
       - "6379:6379"
+
+  db: # New PostgreSQL service
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: webhook_db_test # Use the same DB name as in .env
+      POSTGRES_USER: user # Use the same user as in .env
+      POSTGRES_PASSWORD: password # Use the same password as in .env
+    ports:
+      - "5432:5432" # Expose PostgreSQL port
+    volumes:
+      - db_data:/var/lib/postgresql/data # Persistent data volume
 
   prometheus:
     image: prom/prometheus:v2.47.2
@@ -42,3 +55,6 @@ services:
       - "3000:3000"
     depends_on:
       - prometheus
+
+volumes: # Define the named volume for database persistence
+  db_data:

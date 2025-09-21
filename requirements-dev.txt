@@ -2,6 +2,7 @@ pytest
 pytest-mock
 httpx  # For async testing of the FastAPI app
 pytest-asyncio # For async tests
+pytest-dotenv # For loading .env in pytest
 
 # For Code Quality & DX
 ruff
