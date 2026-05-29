@@ -46,7 +46,7 @@ DYLD_LIBRARY_PATH=/opt/homebrew/opt/expat/lib \
 | pytest | ✅/❌ | N/14 통과 |
 | 보안 | ✅/⚠️ | 건수 |
 
-모두 ✅ → "배포 준비 완료"
+위 4개 항목이 **모두 ✅**이면 Agent D를 실행한다. 하나라도 ❌/⚠️이면 Agent D를 건너뛰고 "배포 준비 미완료" 출력 후 종료.
 
 ---
 
@@ -97,3 +97,47 @@ grep -c "^\.env$" .gitignore || echo "⚠️ .env not in .gitignore"
 | pytest | 전체 통과 (skip 허용) |
 | 보안 | hmac.compare_digest 사용, 하드코딩 없음 |
 | alembic | current == heads |
+
+---
+
+### Agent D — README 최신화 (`subagent_type: general-purpose`, **순차 실행** — A/B/C 모두 ✅ 후에만)
+
+`/Users/grinvi04/project/webhook-service` 기준으로 아래를 순서대로 실행한다.
+
+**1. 현황 파악**
+```bash
+cd /Users/grinvi04/project/webhook-service
+cat README.md
+git log --oneline $(git describe --tags --abbrev=0 HEAD^ 2>/dev/null) 2>/dev/null || git log --oneline -10
+DYLD_LIBRARY_PATH=/opt/homebrew/opt/expat/lib \
+  DATABASE_URL=postgresql+psycopg2://user:password@localhost:5433/webhook_db \
+  .venv/bin/pytest tests/ -q 2>&1 | tail -1
+```
+
+**2. README.md 업데이트 항목**
+
+다음 항목만 수정한다 (그 외 섹션은 건드리지 않는다):
+
+- **테스트 배지**: README 상단 배지 줄에 `tests-N%20passed` 배지가 없으면 CI 배지 줄 바로 뒤에 추가, 있으면 실제 통과 테스트 수로 교체
+  예) `![Tests](https://img.shields.io/badge/tests-14%20passed-brightgreen)`
+- **최근 변경사항 섹션**: README에 `## 최근 변경사항` 섹션이 없으면 기술 스택 표 바로 아래 추가, 있으면 업데이트
+  - `feat`/`fix`/`perf` 타입 커밋만 추려 bullet 목록으로 작성 (최대 5개)
+  - 형식: `- **feat(범위)**: 제목` (한국어 그대로)
+
+**3. 커밋 & 푸시**
+```bash
+cd /Users/grinvi04/project/webhook-service
+git add README.md
+git commit -m "docs(readme): 테스트 수·변경사항 자동 최신화 [release-check]
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
+git push origin main
+```
+
+완료 후 "✅ README 최신화 완료" 출력.
+
+---
+
+## 최종 집계 (Agent D 완료 후)
+
+모두 ✅이면 "**배포 준비 완료**" 메시지 출력.
