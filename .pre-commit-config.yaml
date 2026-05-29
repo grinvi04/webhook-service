@@ -1,15 +1,23 @@
 repos:
--   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+-   repo: local
     hooks:
-    -   id: trailing-whitespace
-    -   id: end-of-file-fixer
-    -   id: check-yaml
-    -   id: check-added-large-files
+    -   id: ruff-check
+        name: ruff check
+        entry: bash -c 'DYLD_LIBRARY_PATH=/opt/homebrew/opt/expat/lib .venv/bin/ruff check --fix app/ tests/'
+        language: system
+        pass_filenames: false
+        always_run: true
 
--   repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.6
-    hooks:
-    -   id: ruff
-        args: [--fix, --exit-non-zero-on-fix]
     -   id: ruff-format
+        name: ruff format
+        entry: bash -c 'DYLD_LIBRARY_PATH=/opt/homebrew/opt/expat/lib .venv/bin/ruff format app/ tests/'
+        language: system
+        pass_filenames: false
+        always_run: true
+
+    -   id: pytest
+        name: pytest
+        entry: bash -c 'DYLD_LIBRARY_PATH=/opt/homebrew/opt/expat/lib DATABASE_URL=postgresql+psycopg2://user:password@localhost:5433/webhook_db .venv/bin/pytest tests/ -q --tb=short'
+        language: system
+        pass_filenames: false
+        always_run: true

@@ -1,5 +1,6 @@
 import logging
 import time
+from contextlib import asynccontextmanager
 from typing import Any
 
 from fastapi import Depends, FastAPI, HTTPException, Request, status
@@ -39,10 +40,19 @@ keycloak_openid = KeycloakOpenID(
     realm_name=settings.keycloak_realm,
     client_secret_key=settings.keycloak_client_secret,
 )
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info("Application startup.")
+    yield
+
+
 app = FastAPI(
     title="Webhook Service",
     description="A service to receive and process webhooks from multiple providers.",
     version="3.0.0",
+    lifespan=lifespan,
 )
 
 # Add KeycloakOpenID to app.state
@@ -71,11 +81,6 @@ async def add_keycloak_auth_middleware(request: Request, call_next):
         pass
     response = await call_next(request)
     return response
-
-
-@app.on_event("startup")
-async def startup():
-    logger.info("Application startup.")
 
 
 @app.get("/", tags=["Root"])
