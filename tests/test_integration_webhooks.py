@@ -9,9 +9,11 @@ import app.database
 import app.main
 import app.webhook_registry
 from app.dependencies import get_current_user
-from app.metrics import CUSTOMER_WEBHOOK_TOTAL, WEBHOOK_PROCESSING_DURATION
+from app.metrics import CUSTOMER_WEBHOOK_TOTAL
 from app.models.customer import Customer
 from app.models.webhook_event import WebhookEvent
+
+_ERRORS_METRIC = "customer_webhook_errors_total"
 
 
 def _counter_value(counter, **labels):
@@ -58,18 +60,25 @@ def client(mocker, db_session_mock):
 
 
 def test_receive_github_webhook_success(client):
-    """Tests successful reception and queuing of a GitHub webhook for a specific tenant."""
+    """Tests successful reception and queuing of a GitHub webhook for a tenant."""
     test_client, mock_task, _, _ = client
     tenant_id = "some-tenant"
     payload = {"action": "opened"}
 
-    initial_webhook_total = _counter_value(CUSTOMER_WEBHOOK_TOTAL, customer_id="mock_customer_id", source="github")
+    initial_webhook_total = _counter_value(
+        CUSTOMER_WEBHOOK_TOTAL, customer_id="mock_customer_id", source="github"
+    )
 
     response = test_client.post(f"/webhooks/{tenant_id}/github", json=payload)
 
     assert response.status_code == 202
     assert response.json() == {"message": "Webhook received and queued for processing."}
-    assert _counter_value(CUSTOMER_WEBHOOK_TOTAL, customer_id="mock_customer_id", source="github") == initial_webhook_total + 1
+    assert (
+        _counter_value(
+            CUSTOMER_WEBHOOK_TOTAL, customer_id="mock_customer_id", source="github"
+        )
+        == initial_webhook_total + 1
+    )
 
 
 def test_receive_github_webhook_invalid_signature(client):
@@ -78,20 +87,26 @@ def test_receive_github_webhook_invalid_signature(client):
     tenant_id = "some-tenant"
     payload = {"action": "opened"}
 
-    mock_verify_github.side_effect = HTTPException(status_code=401, detail="Invalid signature")
+    mock_verify_github.side_effect = HTTPException(
+        status_code=401, detail="Invalid signature"
+    )
 
-    initial_error_total = REGISTRY.get_sample_value(
-        "customer_webhook_errors_total",
-        labels={"customer_id": tenant_id, "source": "github", "error_type": "Invalid signature"},
-    ) or 0
+    error_labels = {
+        "customer_id": tenant_id,
+        "source": "github",
+        "error_type": "Invalid signature",
+    }
+    initial_error_total = (
+        REGISTRY.get_sample_value(_ERRORS_METRIC, labels=error_labels) or 0
+    )
 
     response = test_client.post(f"/webhooks/{tenant_id}/github", json=payload)
 
     assert response.status_code == 401
-    assert REGISTRY.get_sample_value(
-        "customer_webhook_errors_total",
-        labels={"customer_id": tenant_id, "source": "github", "error_type": "Invalid signature"},
-    ) == initial_error_total + 1
+    assert (
+        REGISTRY.get_sample_value(_ERRORS_METRIC, labels=error_labels)
+        == initial_error_total + 1
+    )
 
 
 def test_receive_webhook_tenant_not_found(client):
@@ -100,20 +115,26 @@ def test_receive_webhook_tenant_not_found(client):
     tenant_id = "non-existent-tenant"
     payload = {"action": "opened"}
 
-    mock_verify_github.side_effect = HTTPException(status_code=404, detail="Tenant not found")
+    mock_verify_github.side_effect = HTTPException(
+        status_code=404, detail="Tenant not found"
+    )
 
-    initial_error_total = REGISTRY.get_sample_value(
-        "customer_webhook_errors_total",
-        labels={"customer_id": tenant_id, "source": "github", "error_type": "Tenant not found"},
-    ) or 0
+    error_labels = {
+        "customer_id": tenant_id,
+        "source": "github",
+        "error_type": "Tenant not found",
+    }
+    initial_error_total = (
+        REGISTRY.get_sample_value(_ERRORS_METRIC, labels=error_labels) or 0
+    )
 
     response = test_client.post(f"/webhooks/{tenant_id}/github", json=payload)
 
     assert response.status_code == 404
-    assert REGISTRY.get_sample_value(
-        "customer_webhook_errors_total",
-        labels={"customer_id": tenant_id, "source": "github", "error_type": "Tenant not found"},
-    ) == initial_error_total + 1
+    assert (
+        REGISTRY.get_sample_value(_ERRORS_METRIC, labels=error_labels)
+        == initial_error_total + 1
+    )
 
 
 def test_receive_stripe_webhook_success(client):
@@ -122,13 +143,20 @@ def test_receive_stripe_webhook_success(client):
     tenant_id = "some-tenant"
     payload = {"type": "customer.created"}
 
-    initial_webhook_total = _counter_value(CUSTOMER_WEBHOOK_TOTAL, customer_id="mock_customer_id", source="stripe")
+    initial_webhook_total = _counter_value(
+        CUSTOMER_WEBHOOK_TOTAL, customer_id="mock_customer_id", source="stripe"
+    )
 
     response = test_client.post(f"/webhooks/{tenant_id}/stripe", json=payload)
 
     assert response.status_code == 202
     assert response.json() == {"message": "Webhook received and queued for processing."}
-    assert _counter_value(CUSTOMER_WEBHOOK_TOTAL, customer_id="mock_customer_id", source="stripe") == initial_webhook_total + 1
+    assert (
+        _counter_value(
+            CUSTOMER_WEBHOOK_TOTAL, customer_id="mock_customer_id", source="stripe"
+        )
+        == initial_webhook_total + 1
+    )
 
 
 def test_receive_stripe_webhook_invalid_signature(client):
@@ -137,20 +165,26 @@ def test_receive_stripe_webhook_invalid_signature(client):
     tenant_id = "some-tenant"
     payload = {"type": "customer.created"}
 
-    mock_verify_stripe.side_effect = HTTPException(status_code=401, detail="Invalid Stripe signature.")
+    mock_verify_stripe.side_effect = HTTPException(
+        status_code=401, detail="Invalid Stripe signature."
+    )
 
-    initial_error_total = REGISTRY.get_sample_value(
-        "customer_webhook_errors_total",
-        labels={"customer_id": tenant_id, "source": "stripe", "error_type": "Invalid Stripe signature."},
-    ) or 0
+    error_labels = {
+        "customer_id": tenant_id,
+        "source": "stripe",
+        "error_type": "Invalid Stripe signature.",
+    }
+    initial_error_total = (
+        REGISTRY.get_sample_value(_ERRORS_METRIC, labels=error_labels) or 0
+    )
 
     response = test_client.post(f"/webhooks/{tenant_id}/stripe", json=payload)
 
     assert response.status_code == 401
-    assert REGISTRY.get_sample_value(
-        "customer_webhook_errors_total",
-        labels={"customer_id": tenant_id, "source": "stripe", "error_type": "Invalid Stripe signature."},
-    ) == initial_error_total + 1
+    assert (
+        REGISTRY.get_sample_value(_ERRORS_METRIC, labels=error_labels)
+        == initial_error_total + 1
+    )
 
 
 def test_receive_webhook_inactive_tenant(client):
@@ -159,20 +193,26 @@ def test_receive_webhook_inactive_tenant(client):
     tenant_id = "inactive-tenant"
     payload = {"action": "ping"}
 
-    mock_verify_github.side_effect = HTTPException(status_code=403, detail="Tenant is inactive.")
+    mock_verify_github.side_effect = HTTPException(
+        status_code=403, detail="Tenant is inactive."
+    )
 
-    initial_error_total = REGISTRY.get_sample_value(
-        "customer_webhook_errors_total",
-        labels={"customer_id": tenant_id, "source": "github", "error_type": "Tenant is inactive."},
-    ) or 0
+    error_labels = {
+        "customer_id": tenant_id,
+        "source": "github",
+        "error_type": "Tenant is inactive.",
+    }
+    initial_error_total = (
+        REGISTRY.get_sample_value(_ERRORS_METRIC, labels=error_labels) or 0
+    )
 
     response = test_client.post(f"/webhooks/{tenant_id}/github", json=payload)
 
     assert response.status_code == 403
-    assert REGISTRY.get_sample_value(
-        "customer_webhook_errors_total",
-        labels={"customer_id": tenant_id, "source": "github", "error_type": "Tenant is inactive."},
-    ) == initial_error_total + 1
+    assert (
+        REGISTRY.get_sample_value(_ERRORS_METRIC, labels=error_labels)
+        == initial_error_total + 1
+    )
 
 
 def test_replay_event_success(client, db_session_mock, mocker):
@@ -193,12 +233,16 @@ def test_replay_event_success(client, db_session_mock, mocker):
     mock_event.customer_id = mock_customer_id
     mock_event.source = "github"
     mock_event.payload = mock_payload
-    db_session_mock.query.return_value.filter.return_value.first.return_value = mock_event
+    db_session_mock.query.return_value.filter.return_value.first.return_value = (
+        mock_event
+    )
 
     response = test_client.post(f"/webhooks/{tenant_id}/events/{event_id}/replay")
 
     assert response.status_code == 202
-    assert response.json() == {"message": f"Event {event_id} has been re-queued for processing."}
+    assert response.json() == {
+        "message": f"Event {event_id} has been re-queued for processing."
+    }
     mock_task.delay.assert_called_once_with(mock_customer_id, mock_payload)
 
 
@@ -268,7 +312,7 @@ def test_replay_event_event_not_found_for_tenant(client, db_session_mock, mocker
 
 
 def test_replay_event_data_isolation(client, db_session_mock, mocker):
-    """Tests that replaying an event for a different tenant returns 404 (data isolation)."""
+    """Tests that events from other tenants return 404 (data isolation)."""
     test_client, _, _, _ = client
     tenant_id = "tenant-a"
     event_id = 1

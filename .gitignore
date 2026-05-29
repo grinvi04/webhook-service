@@ -60,6 +60,7 @@ coverage.xml
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
+webhook_events.db
 
 # Flask stuff:
 instance/
@@ -116,3 +117,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+.gemini/
+gha-creds-*.json

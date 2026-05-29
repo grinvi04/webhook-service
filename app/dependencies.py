@@ -1,15 +1,14 @@
 import hashlib
 import hmac
 import logging
-from typing import Optional, Any
+from typing import Any
 
 import stripe
-from fastapi import Depends, HTTPException, Request, status
+from fastapi import HTTPException, Request, status
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
 
-from .config import settings
 from .database import SessionLocal
 from .models.customer import Customer
 
@@ -24,7 +23,7 @@ def get_db():
         db.close()
 
 
-def get_tenant_id_from_path(request: Request) -> Optional[str]:
+def get_tenant_id_from_path(request: Request) -> str | None:
     """
     Extracts the tenant_id from the request path if available.
     """
@@ -67,17 +66,17 @@ async def get_current_user(request: Request) -> dict[str, Any]:
                 detail="Invalid authentication scheme",
                 headers={"WWW-Authenticate": "Bearer"},
             )
-        
+
         # app.state에 저장된 keycloak_openid 객체 사용
         keycloak_openid = request.app.state.keycloak_openid
-        
+
         # 토큰 검증 및 디코딩
         user_info = keycloak_openid.decode_token(
             access_token,
-            key=keycloak_openid.public_key(), # Keycloak에서 공개 키를 가져와야 합니다.
-            options={"verify_signature": True, "verify_aud": False, "exp": True}
+            key=keycloak_openid.public_key(),  # Keycloak에서 공개 키를 가져와야 합니다.
+            options={"verify_signature": True, "verify_aud": False, "exp": True},
         )
-        
+
         # 필요한 경우 사용자 역할(role) 검증 로직 추가
         # roles = user_info.get("realm_access", {}).get("roles", [])
         # if "admin" not in roles:
@@ -106,9 +105,7 @@ class WebhookVerifier:
     def __init__(self, source: str):
         self.source = source
 
-    async def __call__(
-        self, request: Request, tenant_id: str, db: Session
-    ):
+    async def __call__(self, request: Request, tenant_id: str, db: Session):
         customer = self._get_customer(db, tenant_id)
         if not customer:
             raise HTTPException(status_code=404, detail="Tenant not found.")
@@ -128,7 +125,7 @@ class WebhookVerifier:
             )
         return customer  # Return customer for use in the endpoint
 
-    def _get_customer(self, db: Session, tenant_id: str) -> Optional[Customer]:
+    def _get_customer(self, db: Session, tenant_id: str) -> Customer | None:
         customer = db.query(Customer).filter(Customer.tenant_id == tenant_id).first()
         if customer and not customer.is_active:
             raise HTTPException(status_code=403, detail="Tenant is inactive.")
@@ -163,4 +160,6 @@ class WebhookVerifier:
             )
         except stripe.error.SignatureVerificationError as e:
             # The signature is invalid
-            raise HTTPException(status_code=401, detail="Invalid Stripe signature.") from e
+            raise HTTPException(
+                status_code=401, detail="Invalid Stripe signature."
+            ) from e

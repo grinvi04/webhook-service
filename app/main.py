@@ -7,14 +7,23 @@ from prometheus_fastapi_instrumentator import Instrumentator
 from slowapi.middleware import SlowAPIMiddleware
 from sqlalchemy import text
 from sqlalchemy.orm import Session
+
 from keycloak import KeycloakOpenID
 
 from . import admin, database
 from .config import settings
-from .dependencies import WebhookVerifier, get_current_user, get_tenant_id_from_path, limiter
+from .dependencies import (
+    WebhookVerifier,
+    get_current_user,
+    get_tenant_id_from_path,
+    limiter,
+)
 from .logging_config import setup_logging
-from .metrics import CUSTOMER_WEBHOOK_ERRORS_TOTAL, CUSTOMER_WEBHOOK_TOTAL, WEBHOOK_PROCESSING_DURATION
-from .models.customer import Customer
+from .metrics import (
+    CUSTOMER_WEBHOOK_ERRORS_TOTAL,
+    CUSTOMER_WEBHOOK_TOTAL,
+    WEBHOOK_PROCESSING_DURATION,
+)
 from .models.webhook_event import WebhookEvent
 from .webhook_registry import get_task
 
@@ -48,6 +57,7 @@ Instrumentator().instrument(app).expose(app)
 # Add Rate Limiting Middleware
 app.state.limiter = limiter
 app.add_middleware(SlowAPIMiddleware)
+
 
 # Keycloak 인증 미들웨어 (예시, 실제 구현은 더 복잡할 수 있음)
 @app.middleware("http")
@@ -113,7 +123,7 @@ async def receive_webhook(
     Receives webhooks from a specific tenant and source, verifies them,
     and queues them for processing.
     """
-    start_time = time.time() # 시간 측정 시작
+    start_time = time.time()  # 시간 측정 시작
     try:
         # The verifier dependency will handle tenant validation and signature checks.
         if source == "github":
@@ -121,7 +131,9 @@ async def receive_webhook(
         elif source == "stripe":
             customer = await verify_stripe(request, tenant_id, db)
         else:
-            raise HTTPException(status_code=404, detail=f"Source '{source}' not supported.")
+            raise HTTPException(
+                status_code=404, detail=f"Source '{source}' not supported."
+            )
 
         # Increment webhook total counter
         CUSTOMER_WEBHOOK_TOTAL.labels(customer_id=str(customer.id), source=source).inc()
@@ -142,40 +154,52 @@ async def receive_webhook(
 
         return {"message": "Webhook received and queued for processing."}
     except HTTPException as e:
-        CUSTOMER_WEBHOOK_ERRORS_TOTAL.labels(customer_id=tenant_id, source=source, error_type=e.detail).inc()
+        CUSTOMER_WEBHOOK_ERRORS_TOTAL.labels(
+            customer_id=tenant_id, source=source, error_type=e.detail
+        ).inc()
         raise e
     except Exception as e:
-        CUSTOMER_WEBHOOK_ERRORS_TOTAL.labels(customer_id=tenant_id, source=source, error_type=str(type(e).__name__)).inc()
+        CUSTOMER_WEBHOOK_ERRORS_TOTAL.labels(
+            customer_id=tenant_id,
+            source=source,
+            error_type=str(type(e).__name__),
+        ).inc()
         raise HTTPException(status_code=500, detail="Internal Server Error")
     finally:
-        # Observe processing duration
         processing_time = time.time() - start_time
-        WEBHOOK_PROCESSING_DURATION.labels(customer_id=tenant_id, source=source).observe(processing_time)
+        WEBHOOK_PROCESSING_DURATION.labels(
+            customer_id=tenant_id, source=source
+        ).observe(processing_time)
 
 
 @app.post(
-    "/webhooks/{tenant_id}/events/{event_id}/replay", tags=["Events"], status_code=status.HTTP_202_ACCEPTED
+    "/webhooks/{tenant_id}/events/{event_id}/replay",
+    tags=["Events"],
+    status_code=status.HTTP_202_ACCEPTED,
 )
-@limiter.limit("5/minute", key_func=get_tenant_id_from_path) # Apply tenant-specific rate limiting
+@limiter.limit("5/minute", key_func=get_tenant_id_from_path)
 def replay_event(
     tenant_id: str,
     event_id: int,
     request: Request,
     db: Session = Depends(database.get_db),
-    current_user: dict[str, Any] = Depends(get_current_user), # Keycloak 인증 추가
+    current_user: dict[str, Any] = Depends(get_current_user),
 ):
     """
     Re-queues a specific event for processing for a given tenant.
     Requires authentication via Keycloak.
     """
-    logger.info(f"User {current_user.get('preferred_username')} attempting to replay event_id: {event_id} for tenant: {tenant_id}")
+    logger.info(
+        f"User {current_user.get('preferred_username')} "
+        f"attempting to replay event_id: {event_id} for tenant: {tenant_id}"
+    )
 
     # 권한 부여 로직 추가 (예: 'admin' 역할만 허용)
     roles = current_user.get("realm_access", {}).get("roles", [])
     if "admin" not in roles:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not enough permissions to replay events. Admin role required."
+            detail="Not enough permissions to replay events. Admin role required.",
         )
 
     # Ensure the tenant exists and is active
@@ -194,7 +218,7 @@ def replay_event(
         logger.warning(f"Event with id {event_id} not found for tenant {tenant_id}.")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Event not found for this tenant"
+            detail="Event not found for this tenant",
         )
 
     try:

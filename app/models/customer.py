@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, Column, DateTime, String, JSON
+from sqlalchemy import JSON, Boolean, Column, DateTime, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
@@ -15,7 +15,7 @@ class Customer(Base):
     tenant_id = Column(String, unique=True, index=True, nullable=False)
     name = Column(String, nullable=False)
     webhook_secret = Column(String, nullable=False)
-    is_active = Column(Boolean, default=True, nullable=False) # is_active 필드 추가
+    is_active = Column(Boolean, default=True, nullable=False)  # is_active 필드 추가
     created_at = Column(DateTime, default=datetime.utcnow)
 
     allowed_event_types = Column(JSON, default=list, nullable=False)

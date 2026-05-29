@@ -1,9 +1,9 @@
 from sqlalchemy import (
+    JSON,
     Column,
     DateTime,
     ForeignKey,
     Integer,
-    JSON,
     String,
     func,
 )
@@ -22,9 +22,7 @@ class WebhookEvent(Base):
     )
     source = Column(String, index=True)
     payload = Column(JSON)
-    received_at = Column(
-        DateTime(timezone=True), server_default=func.now(), index=True
-    )
+    received_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
 
     status = Column(String, default="PENDING", index=True, nullable=False)
 

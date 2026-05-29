@@ -5,3 +5,7 @@ scrape_configs:
   - job_name: 'webhook-service'
     static_configs:
       - targets: ['web:80'] # 'web' is the service name in docker-compose.yml
+
+  - job_name: 'celery-exporter'
+    static_configs:
+      - targets: ['celery-exporter:9808']

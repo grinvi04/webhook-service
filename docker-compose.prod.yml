@@ -11,17 +11,31 @@ services:
       - .env
     depends_on:
       - redis
+      - db
     # Add a restart policy for production
     restart: always
 
   worker:
     # Use the same pre-built image
     image: ghcr.io/${{ github.repository }}:latest
-    command: celery -A app.celery_worker.celery worker --loglevel=info
+    command: celery -A app.celery_worker.celery worker --loglevel=info -Q default,dead_letters
     env_file:
       - .env
     depends_on:
       - redis
+      - db
+    # Add a restart policy for production
+    restart: always
+
+  priority-worker:
+    # Use the same pre-built image
+    image: ghcr.io/${{ github.repository }}:latest
+    command: celery -A app.celery_worker.celery worker --loglevel=info -Q high_priority
+    env_file:
+      - .env
+    depends_on:
+      - redis
+      - db
     # Add a restart policy for production
     restart: always
 
@@ -32,12 +46,22 @@ services:
     # Add a restart policy for production
     restart: always
 
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    restart: always
+
   prometheus:
     image: prom/prometheus:v2.47.2
     volumes:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
-      - "9090:9090"
+      - "9000:9090"
     depends_on:
       - web
     # Add a restart policy for production
@@ -51,3 +75,6 @@ services:
       - prometheus
     # Add a restart policy for production
     restart: always
+
+volumes:
+  db_data:

@@ -1,11 +1,8 @@
-import secrets
-
 from fastapi import Request, Response
 from sqladmin import Admin, ModelView
 from sqladmin.authentication import AuthenticationBackend
 from starlette.responses import RedirectResponse
 
-from .config import settings
 from .models.webhook_event import WebhookEvent
 
 

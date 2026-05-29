@@ -1,5 +1,4 @@
 import logging
-from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -21,11 +20,9 @@ def send_to_dlq(failed_task_data: dict):
 def _handle_task_failure(task, exc, task_id, args, kwargs, einfo):
     # 실패 메트릭 증가
     customer_id = args[0] if args else "Unknown"
-    source = task.name.split('.')[-1].replace('_webhook_task', '') # 태스크 이름에서 source 추출
+    source = task.name.split(".")[-1].replace("_webhook_task", "")
     CUSTOMER_WEBHOOK_ERRORS_TOTAL.labels(
-        customer_id=str(customer_id),
-        source=source,
-        error_type=str(type(exc).__name__)
+        customer_id=str(customer_id), source=source, error_type=str(type(exc).__name__)
     ).inc()
     # ... (나머지 기존 코드) ...
 
@@ -47,7 +44,8 @@ def process_github_webhook_task(self, customer_id: UUID, payload_dict: dict):
         sender = payload.sender.get("login")
         repo = payload.repository.get("full_name")
         logger.info(
-            f"Processing GitHub event from {sender} for repo {repo} for customer {customer_id}"
+            f"Processing GitHub event from {sender} "
+            f"for repo {repo} for customer {customer_id}"
         )
 
         db_event = WebhookEvent(

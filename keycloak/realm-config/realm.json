@@ -1,0 +1,18 @@
+{
+  "realm": "webhook-service",
+  "enabled": true,
+  "clients": [
+    {
+      "clientId": "webhook-admin-client",
+      "rootUrl": "http://localhost",
+      "adminUrl": "http://localhost",
+      "redirectUris": [
+        "http://localhost/*"
+      ],
+      "publicClient": true,
+      "webOrigins": [
+        "http://localhost"
+      ]
+    }
+  ]
+}
