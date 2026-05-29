@@ -11,7 +11,7 @@ print(d.get('tool_input', {}).get('file_path', ''))
 
 [[ "$FILE_PATH" != *.py ]] && exit 0
 
-PROJECT_ROOT="/Users/grinvi04/Project/webhook-service"
+PROJECT_ROOT="/Users/grinvi04/project/webhook-service"
 [[ "$FILE_PATH" != "$PROJECT_ROOT/app/"* && "$FILE_PATH" != "$PROJECT_ROOT/tests/"* ]] && exit 0
 
 export DYLD_LIBRARY_PATH=/opt/homebrew/opt/expat/lib

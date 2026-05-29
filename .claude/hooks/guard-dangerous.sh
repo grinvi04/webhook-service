@@ -21,7 +21,7 @@ if echo "$COMMAND" | grep -qiE "DROP\s+TABLE"; then
   echo "⛔ DROP TABLE 직접 실행 금지 — Alembic 마이그레이션을 통해 처리하세요."
   exit 2
 fi
-PROJECT_ROOT="/Users/grinvi04/Project/webhook-service"
+PROJECT_ROOT="/Users/grinvi04/project/webhook-service"
 if echo "$COMMAND" | grep -qE "rm\s+-[rRf]{1,3}"; then
   if echo "$COMMAND" | grep -qE "($PROJECT_ROOT\s*$|/app[\s/]|/tests[\s/]|/alembic[\s/])"; then
     echo "⛔ 프로젝트 핵심 디렉토리 rm -rf 금지"

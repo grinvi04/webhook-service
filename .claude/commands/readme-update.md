@@ -12,7 +12,7 @@
 
 ### 1. 사전 검증 (직접 실행, 실패 시 중단)
 ```bash
-cd /Users/grinvi04/Project/webhook-service
+cd /Users/grinvi04/project/webhook-service
 DYLD_LIBRARY_PATH=/opt/homebrew/opt/expat/lib .venv/bin/ruff check app/ tests/
 DYLD_LIBRARY_PATH=/opt/homebrew/opt/expat/lib \
   DATABASE_URL=postgresql+psycopg2://user:password@localhost:5433/webhook_db \

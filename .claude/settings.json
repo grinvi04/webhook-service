@@ -1,4 +1,5 @@
 {
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "hooks": {
     "PreToolUse": [
       {
@@ -6,7 +7,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash /Users/grinvi04/Project/webhook-service/.claude/hooks/guard-dangerous.sh"
+            "command": "bash /Users/grinvi04/project/webhook-service/.claude/hooks/guard-dangerous.sh",
+            "timeout": 10,
+            "statusMessage": "위험 명령 검사 중..."
           }
         ]
       }
@@ -17,7 +20,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash /Users/grinvi04/Project/webhook-service/.claude/hooks/validate-edit.sh"
+            "command": "bash /Users/grinvi04/project/webhook-service/.claude/hooks/validate-edit.sh",
+            "timeout": 120,
+            "statusMessage": "코드 검증 중 (lint · 테스트)..."
           }
         ]
       }
@@ -28,7 +33,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "osascript -e 'display notification \"작업이 완료되었습니다\" with title \"Claude Code\" sound name \"Glass\"'"
+            "command": "osascript -e 'display notification \"작업이 완료되었습니다\" with title \"Claude Code\" sound name \"Glass\"'",
+            "timeout": 5
           }
         ]
       }
