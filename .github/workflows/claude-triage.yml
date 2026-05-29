@@ -1,0 +1,53 @@
+name: '🏷️ Claude Issue Triage'
+
+on:
+  issues:
+    types: [opened, reopened]
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: '${{ github.workflow }}-${{ github.event.issue.number || github.run_id }}'
+  cancel-in-progress: true
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Triage issue with Claude
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          allowed_tools: |
+            Bash(gh issue list *),
+            Bash(gh issue edit *),
+            Bash(gh label list *),
+            Bash(echo *)
+          custom_instructions: |
+            이슈를 분석하여 적절한 레이블을 부여하고 간단한 분류 코멘트를 작성하세요.
+
+            레이블 기준:
+            - bug: 버그, 오류, 예상치 못한 동작
+            - enhancement: 새 기능 요청, 개선 사항
+            - documentation: 문서 관련
+            - question: 사용법 문의, 질문
+            - good first issue: 입문자가 기여하기 좋은 이슈
+
+            응답은 한국어로 작성하세요.
+            레이블 적용 후 분류 이유를 간단히 코멘트하세요.
+          direct_prompt: |
+            이슈 #${{ github.event.issue.number }}을 분석하여 레이블을 부여하고 분류 코멘트를 작성하세요.
+            제목: ${{ github.event.issue.title }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

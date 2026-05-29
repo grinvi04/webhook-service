@@ -8,10 +8,6 @@ class Settings(BaseSettings):
     github_webhook_secret: str
     stripe_webhook_secret: str
 
-    # Add the missing fields from the validation error
-    gemini_model: str | None = None
-    gemini_api_key: str | None = None
-    google_cloud_project: str | None = None
     postgres_db: str | None = None
     postgres_user: str | None = None
     postgres_password: str | None = None
