@@ -135,6 +135,7 @@ docker-compose exec web alembic upgrade head
 | Keycloak | `http://localhost:8080` |
 | Prometheus | `http://localhost:9090` |
 | Grafana | `http://localhost:3000` |
+| Celery Exporter | `http://localhost:9808` |
 
 ### 3. 로컬 개발 (Docker 없이)
 
@@ -222,31 +223,31 @@ curl -X POST http://localhost:8000/webhooks/demo-tenant/events/1/replay \
 # macOS (DYLD_LIBRARY_PATH 필요)
 DYLD_LIBRARY_PATH=/opt/homebrew/opt/expat/lib \
   DATABASE_URL=postgresql+psycopg2://user:password@localhost:5433/webhook_db \
-  pytest tests/ -v
+  .venv/bin/pytest tests/ -v
 
 # Linux / CI
 DATABASE_URL=postgresql+psycopg2://user:password@localhost:5432/webhook_db \
-  pytest tests/ -v
+  .venv/bin/pytest tests/ -v
 ```
 
 ### 린팅
 
 ```bash
-ruff check app/ tests/
-ruff format app/ tests/
+DYLD_LIBRARY_PATH=/opt/homebrew/opt/expat/lib .venv/bin/ruff check app/ tests/
+DYLD_LIBRARY_PATH=/opt/homebrew/opt/expat/lib .venv/bin/ruff format app/ tests/
 ```
 
 ### DB 마이그레이션
 
 ```bash
 # 새 마이그레이션 생성
-alembic revision --autogenerate -m "변경 내용 설명"
+DYLD_LIBRARY_PATH=/opt/homebrew/opt/expat/lib .venv/bin/alembic revision --autogenerate -m "변경 내용 설명"
 
 # 적용
-alembic upgrade head
+DYLD_LIBRARY_PATH=/opt/homebrew/opt/expat/lib .venv/bin/alembic upgrade head
 
 # 현재 상태 확인
-alembic current
+DYLD_LIBRARY_PATH=/opt/homebrew/opt/expat/lib .venv/bin/alembic current
 ```
 
 ### 새 프로바이더 추가
