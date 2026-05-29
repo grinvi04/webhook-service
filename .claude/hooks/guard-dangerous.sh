@@ -4,8 +4,8 @@ TOOL=$(echo "$INPUT" | python3 -c "import sys,json; print(json.load(sys.stdin).g
 COMMAND=$(echo "$INPUT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('tool_input',{}).get('command',''))" 2>/dev/null)
 if [[ "$TOOL" != "Bash" ]]; then exit 0; fi
 if echo "$COMMAND" | grep -qE "git push.*(--force|-f)\b"; then
-  if echo "$COMMAND" | grep -qE "\bmain\b|origin main"; then
-    echo "⛔ main force push 금지 — 히스토리 훼손 위험"
+  if echo "$COMMAND" | grep -qE "\b(main|develop)\b|origin main|origin develop"; then
+    echo "⛔ main/develop force push 금지 — 브랜치 히스토리 훼손 위험"
     exit 2
   fi
 fi
