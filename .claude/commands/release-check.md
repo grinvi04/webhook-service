@@ -124,13 +124,19 @@ DYLD_LIBRARY_PATH=/opt/homebrew/opt/expat/lib \
   - `feat`/`fix`/`perf` 타입 커밋만 추려 bullet 목록으로 작성 (최대 5개)
   - 형식: `- **feat(범위)**: 제목` (한국어 그대로)
 
-**3. 커밋 & 푸시**
+**3. 커밋 & 머지**
 ```bash
 cd /Users/grinvi04/project/webhook-service
+# main 기준 브랜치 생성 → 커밋 → main에 --no-ff 머지 → 브랜치 삭제
+git checkout main
+git checkout -b fix/readme-auto-update
 git add README.md
 git commit -m "docs(readme): 테스트 수·변경사항 자동 최신화 [release-check]
 
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
+git checkout main
+git merge --no-ff fix/readme-auto-update -m "Merge fix/readme-auto-update into main"
+git branch -d fix/readme-auto-update
 git push origin main
 ```
 
