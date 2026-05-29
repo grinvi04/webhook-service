@@ -1,0 +1,63 @@
+# =============================================================================
+# 2. Stripe 웹훅 수신 테스트
+# =============================================================================
+# Stripe은 타임스탬프 기반 서명을 Stripe-Signature 헤더로 전달합니다.
+# 서버는 Stripe 공식 SDK (stripe.Webhook.construct_event)로 검증합니다.
+#
+# 실제 Stripe CLI로 테스트:
+#   stripe listen --forward-to localhost:8000/webhooks/demo-tenant/stripe
+#   stripe trigger customer.subscription.created
+#
+# 또는 Stripe 대시보드에서 웹훅 엔드포인트 등록 후 이벤트 전송
+# =============================================================================
+
+
+### ✅ 성공 케이스 — customer.created 이벤트
+# stripeSignature는 실제 Stripe SDK 또는 CLI로 생성해야 정확합니다.
+# 서명 없이 테스트 시 scripts/stripe_mock.py 사용
+POST {{baseUrl}}/webhooks/{{tenantId}}/stripe
+Content-Type: application/json
+Stripe-Signature: {{stripeSignature}}
+
+{
+  "id": "evt_test_001",
+  "object": "event",
+  "type": "customer.created",
+  "data": {
+    "object": {
+      "id": "cus_test_001",
+      "email": "test@example.com"
+    }
+  }
+}
+
+###
+
+### ✅ payment_intent.succeeded 이벤트
+POST {{baseUrl}}/webhooks/{{tenantId}}/stripe
+Content-Type: application/json
+Stripe-Signature: {{stripeSignature}}
+
+{
+  "id": "evt_test_002",
+  "object": "event",
+  "type": "payment_intent.succeeded",
+  "data": {
+    "object": {
+      "id": "pi_test_001",
+      "amount": 10000,
+      "currency": "krw",
+      "status": "succeeded"
+    }
+  }
+}
+
+###
+
+### ❌ 실패 케이스 — Stripe-Signature 헤더 없음 (400)
+POST {{baseUrl}}/webhooks/{{tenantId}}/stripe
+Content-Type: application/json
+
+{
+  "type": "customer.created"
+}

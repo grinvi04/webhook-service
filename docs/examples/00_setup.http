@@ -1,0 +1,29 @@
+# =============================================================================
+# 0. 서비스 상태 확인
+# =============================================================================
+# 사전 조건:
+#   docker-compose up -d db redis
+#   alembic upgrade head
+#   uvicorn app.main:app --reload
+#
+# VS Code 확장: REST Client (humao.rest-client)
+# 환경 변수:   우측 하단 "No Environment" → "local" 선택
+# =============================================================================
+
+
+### 서비스 헬스 체크
+GET {{baseUrl}}/
+Content-Type: application/json
+
+
+### DB 연결 포함 헬스 체크
+GET {{baseUrl}}/health
+Content-Type: application/json
+
+
+### Swagger UI (브라우저에서 열기)
+# {{baseUrl}}/docs
+
+
+### OpenAPI JSON
+GET {{baseUrl}}/openapi.json

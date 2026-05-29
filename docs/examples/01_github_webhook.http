@@ -1,0 +1,70 @@
+# =============================================================================
+# 1. GitHub 웹훅 수신 테스트
+# =============================================================================
+# GitHub은 HMAC-SHA256 서명을 X-Hub-Signature-256 헤더로 전달합니다.
+# 서버는 저장된 webhook_secret으로 서명을 재계산해 위변조를 검증합니다.
+#
+# 서명 생성:
+#   scripts/generate_github_signature.sh '<JSON_PAYLOAD>' '<SECRET>'
+#   예) ./scripts/generate_github_signature.sh '{"action":"opened",...}' 'my-super-secret-key'
+#
+# 테스트 테넌트 생성 (최초 1회):
+#   scripts/seed_tenant.sh
+# =============================================================================
+
+@payload = {"action":"opened","sender":{"login":"octocat"},"repository":{"full_name":"octocat/hello-world"}}
+
+
+### ✅ 성공 케이스 — 서명 있는 GitHub 웹훅
+# githubSignature 값은 scripts/generate_github_signature.sh 로 생성
+POST {{baseUrl}}/webhooks/{{tenantId}}/github
+Content-Type: application/json
+X-Hub-Signature-256: {{githubSignature}}
+
+{
+  "action": "opened",
+  "sender": {
+    "login": "octocat"
+  },
+  "repository": {
+    "full_name": "octocat/hello-world"
+  }
+}
+
+###
+
+### ❌ 실패 케이스 — 서명 없음 (400)
+POST {{baseUrl}}/webhooks/{{tenantId}}/github
+Content-Type: application/json
+
+{
+  "action": "opened",
+  "sender": {"login": "attacker"},
+  "repository": {"full_name": "attacker/evil-repo"}
+}
+
+###
+
+### ❌ 실패 케이스 — 잘못된 서명 (401)
+POST {{baseUrl}}/webhooks/{{tenantId}}/github
+Content-Type: application/json
+X-Hub-Signature-256: sha256=deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef
+
+{
+  "action": "opened",
+  "sender": {"login": "attacker"},
+  "repository": {"full_name": "attacker/evil-repo"}
+}
+
+###
+
+### ❌ 실패 케이스 — 존재하지 않는 테넌트 (404)
+POST {{baseUrl}}/webhooks/non-existent-tenant/github
+Content-Type: application/json
+X-Hub-Signature-256: {{githubSignature}}
+
+{
+  "action": "opened",
+  "sender": {"login": "octocat"},
+  "repository": {"full_name": "octocat/hello-world"}
+}
