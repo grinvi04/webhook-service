@@ -128,6 +128,19 @@ assert _counter_value(CUSTOMER_WEBHOOK_TOTAL, customer_id="t1", source="github")
 
 ---
 
+## Git Flow
+
+| 브랜치 | 직접 커밋 |
+|---|---|
+| `main`, `develop` | ❌ 금지 |
+| `feature/*`, `fix/*`, `hotfix/*`, `release/*` | ✅ |
+
+**기능 개발**: `develop → feature/xxx → develop (--no-ff)`  
+**긴급 수정**: `main → hotfix/xxx → main (tag) + develop (--no-ff)` ← develop 누락 금지  
+**릴리즈**: `develop → release/vX.X.X → main (tag) + develop (--no-ff)`
+
+---
+
 ## 커밋 전 체크리스트
 
 pre-commit이 자동 실행하지만 수동 확인:

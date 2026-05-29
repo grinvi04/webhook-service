@@ -127,17 +127,17 @@ DYLD_LIBRARY_PATH=/opt/homebrew/opt/expat/lib \
 **3. 커밋 & 머지**
 ```bash
 cd /Users/grinvi04/project/webhook-service
-# main 기준 브랜치 생성 → 커밋 → main에 --no-ff 머지 → 브랜치 삭제
-git checkout main
+# develop 기준 브랜치 생성 → 커밋 → develop에 --no-ff 머지 → 브랜치 삭제
+git checkout develop
 git checkout -b fix/readme-auto-update
 git add README.md
 git commit -m "docs(readme): 테스트 수·변경사항 자동 최신화 [release-check]
 
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
-git checkout main
-git merge --no-ff fix/readme-auto-update -m "Merge fix/readme-auto-update into main"
+git checkout develop
+git merge --no-ff fix/readme-auto-update -m "Merge fix/readme-auto-update into develop"
 git branch -d fix/readme-auto-update
-git push origin main
+git push origin develop
 ```
 
 완료 후 "✅ README 최신화 완료" 출력.
