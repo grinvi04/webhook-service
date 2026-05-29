@@ -1,111 +1,288 @@
-import hashlib
-import hmac
-import json
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from fastapi import HTTPException
-from fastapi.testclient import TestClient  # Changed from httpx import AsyncClient
+from fastapi.testclient import TestClient
+from prometheus_client import REGISTRY
 
-# Import app.main only within the fixture after patching
-import app.main  # Import the module, not the app instance directly
-import app.webhook_registry  # Import the registry to patch it
-from app.config import settings
+import app.database
+import app.main
+import app.webhook_registry
+from app.dependencies import get_current_user
+from app.metrics import CUSTOMER_WEBHOOK_TOTAL, WEBHOOK_PROCESSING_DURATION
+from app.models.customer import Customer
+from app.models.webhook_event import WebhookEvent
 
-# Removed: pytestmark = pytest.mark.asyncio
 
-# Removed: @pytest.fixture def anyio_backend(): return 'asyncio'
+def _counter_value(counter, **labels):
+    """Read current value of a Counter for specific labels."""
+    for metric in counter.collect():
+        for sample in metric.samples:
+            if sample.name.endswith("_total") and sample.labels == labels:
+                return sample.value
+    return 0.0
 
 
 @pytest.fixture
-def mock_app_dependencies(mocker):
-    """
-    Fixture to patch app dependencies before app.main is imported.
-    """
-    mock_task_instance = MagicMock()
-    mock_delay_method = MagicMock()
-    mock_task_instance.delay = mock_delay_method
+def db_session_mock():
+    return MagicMock()
 
-    mock_verifier_instance = AsyncMock()
 
-    # Patch TASK_REGISTRY and VERIFIER_REGISTRY directly
-    mocker.patch.dict(
-        "app.webhook_registry.TASK_REGISTRY", {"github": mock_task_instance}
+@pytest.fixture
+def client(mocker, db_session_mock):
+    app.main.app.dependency_overrides[app.database.get_db] = lambda: db_session_mock
+
+    mock_task = MagicMock()
+    mocker.patch("app.main.get_task", return_value=mock_task)
+
+    mock_customer = MagicMock(spec=Customer)
+    mock_customer.id = "mock_customer_id"
+    mock_customer.is_active = True
+    mock_verify_github = mocker.patch(
+        "app.main.verify_github", new_callable=AsyncMock, return_value=mock_customer
     )
-    mocker.patch.dict(
-        "app.webhook_registry.VERIFIER_REGISTRY", {"github": mock_verifier_instance}
+    mock_verify_stripe = mocker.patch(
+        "app.main.verify_stripe", new_callable=AsyncMock, return_value=mock_customer
     )
 
-    # Reload app.main to ensure it uses the patched dependencies
-    import importlib
-
-    importlib.reload(app.main)
-    # Explicitly get the app instance after reloading
-    app_instance = app.main.app
-    # Yield the mocks and app instance
-    yield mock_task_instance, mock_verifier_instance, app_instance
-    # Teardown: clean up patches if necessary (mocker handles this)
-
-
-# Removed async from function definition
-def test_receive_github_webhook_success(mock_app_dependencies, mocker):
-    """Tests successful reception and queuing of a GitHub webhook."""
-    mock_task_instance, mock_verifier_instance, app_instance = mock_app_dependencies
-
-    # 2. Prepare the payload and signature
-    payload = {
-        "action": "opened",
-        "sender": {"login": "testuser"},
-        "repository": {"full_name": "test/repo"},
+    mock_user_info = {
+        "preferred_username": "testuser",
+        "realm_access": {"roles": ["admin", "user"]},
     }
-    payload_bytes = json.dumps(payload).encode("utf-8")
-    secret = settings.github_webhook_secret.encode("utf-8")
-    signature = hmac.new(secret, payload_bytes, hashlib.sha256).hexdigest()
-    headers = {
-        "X-Hub-Signature-256": f"sha256={signature}",
-        "Content-Type": "application/json",
-    }
+    app.main.app.dependency_overrides[get_current_user] = lambda: mock_user_info
 
-    # 3. Make the request
-    client = TestClient(app_instance)  # Changed from AsyncClient
-    # Removed async with client as ac:
-    response = client.post(
-        "/webhooks/github", content=payload_bytes, headers=headers
-    )  # Removed await and changed ac to client
+    test_client = TestClient(app.main.app)
+    yield test_client, mock_task, mock_verify_github, mock_verify_stripe
 
-    # 4. Assertions
+    app.main.app.dependency_overrides.clear()
+
+
+def test_receive_github_webhook_success(client):
+    """Tests successful reception and queuing of a GitHub webhook for a specific tenant."""
+    test_client, mock_task, _, _ = client
+    tenant_id = "some-tenant"
+    payload = {"action": "opened"}
+
+    initial_webhook_total = _counter_value(CUSTOMER_WEBHOOK_TOTAL, customer_id="mock_customer_id", source="github")
+
+    response = test_client.post(f"/webhooks/{tenant_id}/github", json=payload)
+
     assert response.status_code == 202
     assert response.json() == {"message": "Webhook received and queued for processing."}
-
-    # Verify the task was called once with the correct payload
-    mock_task_instance.delay.assert_called_once_with(payload)
+    assert _counter_value(CUSTOMER_WEBHOOK_TOTAL, customer_id="mock_customer_id", source="github") == initial_webhook_total + 1
 
 
-# Removed async from function definition
-def test_receive_github_webhook_invalid_signature(mock_app_dependencies, mocker):
-    """Tests that a request with an invalid signature is rejected."""
-    mock_task_instance, mock_verifier_instance, app_instance = mock_app_dependencies
-
-    # Configure mock_verifier_instance to raise HTTPException
-    mock_verifier_instance.side_effect = HTTPException(
-        status_code=401, detail="Invalid GitHub signature"
-    )
-
+def test_receive_github_webhook_invalid_signature(client):
+    """Tests that a request with an invalid signature is rejected with 401."""
+    test_client, mock_task, mock_verify_github, _ = client
+    tenant_id = "some-tenant"
     payload = {"action": "opened"}
-    payload_bytes = json.dumps(payload).encode("utf-8")
-    # secret = settings.github_webhook_secret.encode("utf-8") # Removed unused variable
-    # signature = hmac.new(secret, payload_bytes, hashlib.sha256).hexdigest() # Unused
-    headers = {
-        "X-Hub-Signature-256": "sha256=invalid_signature",
-        "Content-Type": "application/json",
-    }
 
-    client = TestClient(app_instance)  # Changed from AsyncClient
-    # Removed async with client as ac:
-    response = client.post(
-        "/webhooks/github", content=payload_bytes, headers=headers
-    )  # Removed await and changed ac to client
+    mock_verify_github.side_effect = HTTPException(status_code=401, detail="Invalid signature")
+
+    initial_error_total = REGISTRY.get_sample_value(
+        "customer_webhook_errors_total",
+        labels={"customer_id": tenant_id, "source": "github", "error_type": "Invalid signature"},
+    ) or 0
+
+    response = test_client.post(f"/webhooks/{tenant_id}/github", json=payload)
 
     assert response.status_code == 401
-    assert "Invalid GitHub signature" in response.text
-    mock_task_instance.delay.assert_not_called()
+    assert REGISTRY.get_sample_value(
+        "customer_webhook_errors_total",
+        labels={"customer_id": tenant_id, "source": "github", "error_type": "Invalid signature"},
+    ) == initial_error_total + 1
+
+
+def test_receive_webhook_tenant_not_found(client):
+    """Tests that a request with a non-existent tenant_id is rejected with 404."""
+    test_client, mock_task, mock_verify_github, _ = client
+    tenant_id = "non-existent-tenant"
+    payload = {"action": "opened"}
+
+    mock_verify_github.side_effect = HTTPException(status_code=404, detail="Tenant not found")
+
+    initial_error_total = REGISTRY.get_sample_value(
+        "customer_webhook_errors_total",
+        labels={"customer_id": tenant_id, "source": "github", "error_type": "Tenant not found"},
+    ) or 0
+
+    response = test_client.post(f"/webhooks/{tenant_id}/github", json=payload)
+
+    assert response.status_code == 404
+    assert REGISTRY.get_sample_value(
+        "customer_webhook_errors_total",
+        labels={"customer_id": tenant_id, "source": "github", "error_type": "Tenant not found"},
+    ) == initial_error_total + 1
+
+
+def test_receive_stripe_webhook_success(client):
+    """Tests successful reception and queuing of a Stripe webhook."""
+    test_client, mock_task, _, mock_verify_stripe = client
+    tenant_id = "some-tenant"
+    payload = {"type": "customer.created"}
+
+    initial_webhook_total = _counter_value(CUSTOMER_WEBHOOK_TOTAL, customer_id="mock_customer_id", source="stripe")
+
+    response = test_client.post(f"/webhooks/{tenant_id}/stripe", json=payload)
+
+    assert response.status_code == 202
+    assert response.json() == {"message": "Webhook received and queued for processing."}
+    assert _counter_value(CUSTOMER_WEBHOOK_TOTAL, customer_id="mock_customer_id", source="stripe") == initial_webhook_total + 1
+
+
+def test_receive_stripe_webhook_invalid_signature(client):
+    """Tests that a Stripe webhook with an invalid signature is rejected with 401."""
+    test_client, mock_task, _, mock_verify_stripe = client
+    tenant_id = "some-tenant"
+    payload = {"type": "customer.created"}
+
+    mock_verify_stripe.side_effect = HTTPException(status_code=401, detail="Invalid Stripe signature.")
+
+    initial_error_total = REGISTRY.get_sample_value(
+        "customer_webhook_errors_total",
+        labels={"customer_id": tenant_id, "source": "stripe", "error_type": "Invalid Stripe signature."},
+    ) or 0
+
+    response = test_client.post(f"/webhooks/{tenant_id}/stripe", json=payload)
+
+    assert response.status_code == 401
+    assert REGISTRY.get_sample_value(
+        "customer_webhook_errors_total",
+        labels={"customer_id": tenant_id, "source": "stripe", "error_type": "Invalid Stripe signature."},
+    ) == initial_error_total + 1
+
+
+def test_receive_webhook_inactive_tenant(client):
+    """Tests that a webhook for an inactive tenant is rejected with 403."""
+    test_client, mock_task, mock_verify_github, _ = client
+    tenant_id = "inactive-tenant"
+    payload = {"action": "ping"}
+
+    mock_verify_github.side_effect = HTTPException(status_code=403, detail="Tenant is inactive.")
+
+    initial_error_total = REGISTRY.get_sample_value(
+        "customer_webhook_errors_total",
+        labels={"customer_id": tenant_id, "source": "github", "error_type": "Tenant is inactive."},
+    ) or 0
+
+    response = test_client.post(f"/webhooks/{tenant_id}/github", json=payload)
+
+    assert response.status_code == 403
+    assert REGISTRY.get_sample_value(
+        "customer_webhook_errors_total",
+        labels={"customer_id": tenant_id, "source": "github", "error_type": "Tenant is inactive."},
+    ) == initial_error_total + 1
+
+
+def test_replay_event_success(client, db_session_mock, mocker):
+    """Tests successful re-queuing of an event with authentication and tenant_id."""
+    test_client, mock_task, _, _ = client
+    tenant_id = "some-tenant"
+    event_id = 1
+    mock_customer_id = "mock_customer_id"
+    mock_payload = {"key": "value"}
+
+    mock_customer = MagicMock(spec=Customer)
+    mock_customer.id = mock_customer_id
+    mock_customer.is_active = True
+    mocker.patch("app.main.WebhookVerifier._get_customer", return_value=mock_customer)
+
+    mock_event = MagicMock(spec=WebhookEvent)
+    mock_event.id = event_id
+    mock_event.customer_id = mock_customer_id
+    mock_event.source = "github"
+    mock_event.payload = mock_payload
+    db_session_mock.query.return_value.filter.return_value.first.return_value = mock_event
+
+    response = test_client.post(f"/webhooks/{tenant_id}/events/{event_id}/replay")
+
+    assert response.status_code == 202
+    assert response.json() == {"message": f"Event {event_id} has been re-queued for processing."}
+    mock_task.delay.assert_called_once_with(mock_customer_id, mock_payload)
+
+
+def test_replay_event_unauthorized(client):
+    """Tests that replaying an event without authentication returns 401."""
+    test_client, _, _, _ = client
+    tenant_id = "some-tenant"
+    event_id = 1
+
+    # Remove auth override so the real get_current_user runs (no auth header → 401)
+    app.main.app.dependency_overrides.pop(get_current_user, None)
+
+    response = test_client.post(f"/webhooks/{tenant_id}/events/{event_id}/replay")
+
+    assert response.status_code == 401
+    assert "Authorization header missing" in response.text
+
+
+def test_replay_event_forbidden(client):
+    """Tests that replaying an event with insufficient permissions returns 403."""
+    test_client, _, _, _ = client
+    tenant_id = "some-tenant"
+    event_id = 1
+
+    app.main.app.dependency_overrides[get_current_user] = lambda: {
+        "preferred_username": "testuser",
+        "realm_access": {"roles": ["user"]},
+    }
+
+    response = test_client.post(f"/webhooks/{tenant_id}/events/{event_id}/replay")
+
+    assert response.status_code == 403
+    assert "Not enough permissions" in response.text
+
+
+def test_replay_event_tenant_not_found(client, mocker):
+    """Tests that replaying an event for a non-existent tenant returns 404."""
+    test_client, _, _, _ = client
+    tenant_id = "non-existent-tenant"
+    event_id = 1
+
+    mocker.patch("app.main.WebhookVerifier._get_customer", return_value=None)
+
+    response = test_client.post(f"/webhooks/{tenant_id}/events/{event_id}/replay")
+
+    assert response.status_code == 404
+    assert "Tenant not found or inactive." in response.text
+
+
+def test_replay_event_event_not_found_for_tenant(client, db_session_mock, mocker):
+    """Tests that replaying a non-existent event for a given tenant returns 404."""
+    test_client, _, _, _ = client
+    tenant_id = "some-tenant"
+    event_id = 999
+    mock_customer_id = "mock_customer_id"
+
+    mock_customer = MagicMock(spec=Customer)
+    mock_customer.id = mock_customer_id
+    mock_customer.is_active = True
+    mocker.patch("app.main.WebhookVerifier._get_customer", return_value=mock_customer)
+    db_session_mock.query.return_value.filter.return_value.first.return_value = None
+
+    response = test_client.post(f"/webhooks/{tenant_id}/events/{event_id}/replay")
+
+    assert response.status_code == 404
+    assert "Event not found for this tenant" in response.text
+
+
+def test_replay_event_data_isolation(client, db_session_mock, mocker):
+    """Tests that replaying an event for a different tenant returns 404 (data isolation)."""
+    test_client, _, _, _ = client
+    tenant_id = "tenant-a"
+    event_id = 1
+    mock_customer_id_a = "customer_id_a"
+
+    mock_customer_a = MagicMock(spec=Customer)
+    mock_customer_a.id = mock_customer_id_a
+    mock_customer_a.is_active = True
+    mocker.patch("app.main.WebhookVerifier._get_customer", return_value=mock_customer_a)
+
+    # Event belongs to a different customer — query returns None
+    db_session_mock.query.return_value.filter.return_value.first.return_value = None
+
+    response = test_client.post(f"/webhooks/{tenant_id}/events/{event_id}/replay")
+
+    assert response.status_code == 404
+    assert "Event not found for this tenant" in response.text

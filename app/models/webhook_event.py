@@ -1,5 +1,14 @@
-from sqlalchemy import JSON, Column, DateTime, Integer, String
-from sqlalchemy.sql import func
+from sqlalchemy import (
+    Column,
+    DateTime,
+    ForeignKey,
+    Integer,
+    JSON,
+    String,
+    func,
+)
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 
 from ..database import Base
 
@@ -8,6 +17,15 @@ class WebhookEvent(Base):
     __tablename__ = "webhook_events"
 
     id = Column(Integer, primary_key=True, index=True)
-    source = Column(String, index=True)  # e.g., "github", "stripe"
+    customer_id = Column(
+        UUID(as_uuid=True), ForeignKey("customers.id"), nullable=False, index=True
+    )
+    source = Column(String, index=True)
     payload = Column(JSON)
-    received_at = Column(DateTime(timezone=True), server_default=func.now())
+    received_at = Column(
+        DateTime(timezone=True), server_default=func.now(), index=True
+    )
+
+    status = Column(String, default="PENDING", index=True, nullable=False)
+
+    customer = relationship("Customer", back_populates="events")

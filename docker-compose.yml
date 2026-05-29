@@ -1,44 +1,103 @@
 version: '3.8'
 
 services:
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - web
+
   web:
     build: .
-    ports:
-      - "8000:80"
+
     volumes:
       - .:/usr/src/app
     env_file:
       - .env
     depends_on:
-      - redis
-      - db # Add dependency on the new db service
+      redis:
+        condition: service_started
+      db:
+        condition: service_healthy
 
   worker:
     build: .
-    command: celery -A app.celery_worker.celery worker --loglevel=info
+    command: celery -A app.celery_worker.celery worker --loglevel=info -Q default,dead_letters
     volumes:
       - .:/usr/src/app
     env_file:
       - .env
     depends_on:
-      - redis
-      - db # Add dependency on the new db service
+      redis:
+        condition: service_started
+      db:
+        condition: service_healthy
+
+  priority-worker:
+    build: .
+    command: celery -A app.celery_worker.celery worker --loglevel=info -Q high_priority
+    volumes:
+      - .:/usr/src/app
+    env_file:
+      - .env
+    depends_on:
+      redis:
+        condition: service_started
+      db:
+        condition: service_healthy
 
   redis:
     image: redis:7-alpine
     ports:
       - "6379:6379"
 
-  db: # New PostgreSQL service
+  celery-exporter:
+    image: oliver006/celery-exporter:v0.6.0
+    command: --broker-url=${CELERY_BROKER_URL}
+    ports:
+      - "9808:9808"
+    env_file:
+      - .env
+    depends_on:
+      - redis
+
+  db:
     image: postgres:15-alpine
     environment:
-      POSTGRES_DB: webhook_db_test # Use the same DB name as in .env
-      POSTGRES_USER: user # Use the same user as in .env
-      POSTGRES_PASSWORD: password # Use the same password as in .env
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - "5432:5432" # Expose PostgreSQL port
+      - "5433:5432"
     volumes:
-      - db_data:/var/lib/postgresql/data # Persistent data volume
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:22.0.5
+    command: start-dev --import-realm
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://db:5432/keycloak
+      KC_DB_USERNAME: ${POSTGRES_USER}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_PORT: 8080
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./keycloak/realm-config:/opt/keycloak/data/import
+    depends_on:
+      - db
 
   prometheus:
     image: prom/prometheus:v2.47.2
@@ -56,5 +115,5 @@ services:
     depends_on:
       - prometheus
 
-volumes: # Define the named volume for database persistence
+volumes:
   db_data:

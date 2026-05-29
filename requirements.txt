@@ -1,19 +1,32 @@
-fastapi
-uvicorn[standard]
-sqlalchemy[asyncio]
-pydantic
-pydantic-settings
-python-dotenv
-psycopg2-binary
+# Core Application
+fastapi==0.117.1
+uvicorn[standard]==0.36.0
+sqlalchemy[asyncio]==2.0.43
+pydantic==2.11.9
+pydantic-settings==2.10.1
+python-dotenv==1.1.1
+psycopg2-binary==2.9.12
 
 # For Celery (Background Jobs)
-celery[redis]
+celery[redis]==5.5.3
 
 # For Monitoring
-prometheus-fastapi-instrumentator
+prometheus-fastapi-instrumentator==7.1.0
 
 # For Admin UI
-sqladmin
+sqladmin==0.21.0
+itsdangerous
 
 # For DB Migrations
-alembic
+alembic==1.16.5
+Mako==1.3.10
+
+# For Rate Limiting
+slowapi==0.1.9
+
+# For Structured Logging
+structlog==24.1.0
+
+# For Stripe Webhook Verification
+stripe==9.1.0
+python-keycloak==2.0.0

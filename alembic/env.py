@@ -2,6 +2,10 @@ import os
 import sys
 from logging.config import fileConfig
 
+# Add this block to load .env file
+from dotenv import load_dotenv
+load_dotenv() # Load environment variables from .env file
+
 from sqlalchemy import engine_from_config, pool
 
 from alembic import context
@@ -20,14 +24,18 @@ if config.config_file_name is not None:
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__), "..")))
-from app.config import settings  # noqa: E402
-from app.models.webhook_event import Base  # noqa: E402
+from app.config import settings  # noqa: E42
+from app.database import Base  # noqa: E402
+from app.models import customer, webhook_event  # noqa: F401, E402
 
 target_metadata = Base.metadata
-# The original URL is for async, but Alembic runs sync.
-# Replace the driver part of the URL.
-sync_db_url = settings.database_url.replace("sqlite+aiosqlite", "sqlite+pysqlite")
-config.set_main_option("sqlalchemy.url", sync_db_url)
+
+# Check if DATABASE_URL is set and replace 'db' with 'localhost' if running outside docker-compose network
+db_url = settings.database_url
+if "db:5432" in db_url and os.environ.get("ALEMBIC_RUNNING_OUTSIDE_DOCKER"):
+    db_url = db_url.replace("db:5432", "localhost:5432")
+
+config.set_main_option("sqlalchemy.url", db_url)
 
 
 # other values from the config, defined by the needs of env.py,

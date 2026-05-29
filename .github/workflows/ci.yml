@@ -59,7 +59,7 @@ jobs:
 
       - name: Run tests with pytest
         env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+          DATABASE_URL: postgresql+psycopg2://postgres:postgres@localhost:5432/test_db
           GITHUB_WEBHOOK_SECRET: ${{ secrets.GITHUB_WEBHOOK_SECRET }}
           STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
           CELERY_BROKER_URL: redis://localhost:6379/0
