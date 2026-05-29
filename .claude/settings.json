@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /Users/grinvi04/Project/webhook-service/.claude/hooks/validate-edit.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
