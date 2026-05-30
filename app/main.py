@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 from keycloak import KeycloakOpenID
 
-from . import admin, database
+from . import admin, database, webhooks  # noqa: F401
 from .config import settings
 from .dependencies import (
     WebhookVerifier,
