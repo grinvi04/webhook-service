@@ -12,6 +12,27 @@
 
 ---
 
+## 커맨드 강제 사용 규칙
+
+**`app/` 또는 `tests/` 파일을 수정·생성할 때는 반드시 아래 커맨드를 먼저 실행한다. 직접 편집 금지.**
+
+| 상황 | 커맨드 |
+|---|---|
+| 운영 중 긴급 버그 (main 기준) | `/hotfix <name> "<증상>"` |
+| 기능 추가·변경 (develop 기준) | `/feature-modify <name> "<설명>"` |
+| 새 웹훅 프로바이더 추가 | `/provider-add <name> "<설명>"` |
+| DB 스키마 변경 | `/migration-add <설명>` |
+| 릴리즈 전 검증 | `/release-check` |
+| 릴리즈 실행 | `/release <version>` |
+
+**예외** (커맨드 없이 직접 편집 허용):
+- `.claude/`, `CLAUDE.md`, `README.md` 등 설정·문서
+- `requirements.txt`, `docker-compose.yml` 등 인프라 설정
+
+**커맨드를 건너뛰고 싶으면 멈추고 사용자에게 먼저 물어볼 것.**
+
+---
+
 ## 프로젝트 개요
 
 FastAPI + Celery + PostgreSQL + Redis 기반 멀티테넌트 웹훅 처리 서비스.
