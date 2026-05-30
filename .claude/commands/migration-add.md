@@ -13,7 +13,7 @@
 
 ### 1. 현재 상태 확인
 ```bash
-cd /Users/grinvi04/Project/webhook-service
+cd /Users/grinvi04/project/webhook-service
 DATABASE_URL=postgresql+psycopg2://user:password@localhost:5433/webhook_db \
   .venv/bin/alembic current
 ```

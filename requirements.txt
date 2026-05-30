@@ -15,7 +15,7 @@ prometheus-fastapi-instrumentator==7.1.0
 
 # For Admin UI
 sqladmin==0.21.0
-itsdangerous
+itsdangerous==2.2.0
 
 # For DB Migrations
 alembic==1.16.5
