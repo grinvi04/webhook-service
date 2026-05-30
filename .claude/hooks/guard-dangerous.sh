@@ -4,7 +4,12 @@ TOOL=$(echo "$INPUT" | python3 -c "import sys,json; print(json.load(sys.stdin).g
 COMMAND=$(echo "$INPUT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('tool_input',{}).get('command',''))" 2>/dev/null)
 if [[ "$TOOL" != "Bash" ]]; then exit 0; fi
 if echo "$COMMAND" | grep -qE "git commit"; then
-  BRANCH=$(git branch --show-current 2>/dev/null)
+  CD_TARGET=$(echo "$COMMAND" | grep -oE 'cd [^ ;&]+' | head -1 | awk '{print $2}')
+  if [[ -n "$CD_TARGET" ]]; then
+    BRANCH=$(git -C "$CD_TARGET" branch --show-current 2>/dev/null)
+  else
+    BRANCH=$(git branch --show-current 2>/dev/null)
+  fi
   if [[ "$BRANCH" == "main" || "$BRANCH" == "develop" ]]; then
     echo "⛔ main/develop 직접 커밋 금지 — feature/fix/hotfix/release 브랜치에서 작업하세요"
     exit 2
