@@ -1,13 +1,26 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/session-start.sh",
+            "timeout": 10,
+            "statusMessage": "세션 컨텍스트 로딩 중..."
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
         "matcher": "Bash",
         "hooks": [
           {
             "type": "command",
-            "command": "bash /Users/grinvi04/project/webhook-service/.claude/hooks/guard-dangerous.sh",
+            "command": "bash .claude/hooks/guard-dangerous.sh",
             "timeout": 10,
             "statusMessage": "위험 명령 검사 중..."
           }
@@ -20,16 +33,28 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash /Users/grinvi04/project/webhook-service/.claude/hooks/validate-edit.sh",
+            "command": "bash .claude/hooks/validate-edit.sh",
             "timeout": 120,
             "statusMessage": "코드 검증 중 (lint · 테스트)..."
           }
         ]
       }
     ],
+    "SubagentStop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "osascript -e 'display notification \"에이전트 완료\" with title \"Claude Code\"'",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
     "Stop": [
       {
-        "matcher": "",
+        "matcher": "*",
         "hooks": [
           {
             "type": "command",
