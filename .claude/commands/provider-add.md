@@ -18,6 +18,15 @@
 ### 1. 사전 확인 (직접 실행)
 위 4개 파일 Read 후 기존 패턴 파악.
 
+### 1-1. 중단 조건 (사전 확인 후 즉시 판단)
+
+아래 상황이면 즉시 중단하고 사유를 출력한다. 에이전트를 spawn하지 않는다.
+
+| 상황 | 중단 사유 출력 |
+|---|---|
+| `webhook_registry.py`에 해당 프로바이더가 이미 등록됨 | "프로바이더 '{name}'은 이미 등록되어 있습니다 — TASK_REGISTRY 확인: [현재 등록 목록]" |
+| `requirements.txt`에 필요한 서드파티 SDK가 없고 적합한 패키지가 불명확함 | "서명 검증에 필요한 패키지를 특정할 수 없습니다 — 사용할 SDK를 알려주세요." |
+
 ### 2. 병렬 에이전트 (동시에 background spawn)
 
 **Agent A — 애플리케이션 코드** (`subagent_type: general-purpose`, `run_in_background: true`)

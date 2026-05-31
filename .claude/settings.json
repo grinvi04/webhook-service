@@ -23,6 +23,16 @@
             "command": "bash .claude/hooks/guard-dangerous.sh",
             "timeout": 10,
             "statusMessage": "위험 명령 검사 중..."
+          },
+          {
+            "type": "prompt",
+            "timeout": 15,
+            "prompt": "아래 Bash 명령어가 Alembic 마이그레이션을 2단계 이상 되돌리거나(예: downgrade -2, downgrade -3, downgrade <해시>), DB 스키마를 대량으로 파괴할 위험이 있으면 deny하라. 단 'alembic downgrade -1'은 반드시 allow한다. 명령어: $ARGUMENTS.tool_input.command. JSON으로만 응답: {\"decision\": \"allow\" 또는 \"deny\", \"reason\": \"deny 시 이유\"}"
+          },
+          {
+            "type": "prompt",
+            "timeout": 15,
+            "prompt": "아래 Bash 명령어가 .env 파일이나 환경변수에 담긴 시크릿(DB 비밀번호, API 키, 토큰 등)을 외부 URL로 전송하거나 터미널 밖으로 노출할 위험이 있으면 deny하라. 단순히 .env를 읽거나 환경변수를 로컬에서 사용하는 것은 allow한다. 명령어: $ARGUMENTS.tool_input.command. JSON으로만 응답: {\"decision\": \"allow\" 또는 \"deny\", \"reason\": \"deny 시 이유\"}"
           }
         ]
       }
