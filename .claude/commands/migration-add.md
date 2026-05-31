@@ -18,6 +18,16 @@ DATABASE_URL=postgresql+psycopg2://user:password@localhost:5433/webhook_db \
   .venv/bin/alembic current
 ```
 
+### 1-1. 중단 조건 (현재 상태 확인 후 즉시 판단)
+
+아래 상황이면 즉시 중단하고 사유를 출력한다. 모델 수정으로 진행하지 않는다.
+
+| 상황 | 중단 사유 출력 |
+|---|---|
+| `alembic current` 실행 오류 (DB 연결 실패 등) | "DB에 연결할 수 없습니다 — docker-compose up -d db 후 재시도해 주세요." |
+| `alembic current` ≠ `alembic heads` (미적용 마이그레이션 존재) | "미적용 마이그레이션이 있습니다 — alembic upgrade head 실행 후 재시도해 주세요." |
+| `NOT NULL` 컬럼 추가인데 `server_default` 또는 backfill 전략이 없음 | "기존 데이터 처리 전략이 필요합니다 — server_default 값 또는 backfill SQL을 알려주세요." |
+
 ### 2. 모델 수정
 `app/models/` Read → SQLAlchemy 2.0 패턴으로 수정:
 - `Column(String)` → `mapped_column(String)` (SQLAlchemy 2.0 권장)
@@ -44,9 +54,6 @@ DYLD_LIBRARY_PATH=/opt/homebrew/opt/expat/lib \
   .venv/bin/pytest tests/ -q
 ```
 
-### 6. 커밋
-`feat(db): $ARGUMENTS`
-
 ### 6. 롤백 검증
 ```bash
 DATABASE_URL=postgresql+psycopg2://user:password@localhost:5433/webhook_db \
@@ -54,7 +61,7 @@ DATABASE_URL=postgresql+psycopg2://user:password@localhost:5433/webhook_db \
 DATABASE_URL=postgresql+psycopg2://user:password@localhost:5433/webhook_db \
   .venv/bin/alembic upgrade head
 ```
-다운그레이드 실패 시 `downgrade()` 함수 구현 검토.
+`downgrade -1` 실패 시 → **즉시 중단**. `downgrade()` 함수 미구현 원인 리포트 후 사용자 확인 요청. upgrade head는 실행하지 않는다.
 
 ### 7. 커밋
 `feat(db): $ARGUMENTS`

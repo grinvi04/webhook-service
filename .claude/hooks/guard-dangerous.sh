@@ -40,4 +40,11 @@ if echo "$COMMAND" | grep -qE "rm\s+-[rRf]{1,3}"; then
     exit 2
   fi
 fi
+
+# 시스템 Python에 글로벌 패키지 설치 금지 (.venv/bin/pip 사용 필수)
+if echo "$COMMAND" | grep -qE "(^|&&|\|)\s*pip(3)?\s+install\b" && ! echo "$COMMAND" | grep -qE "\.venv/bin/pip"; then
+  echo "⛔ 시스템 pip install 금지 — .venv/bin/pip install 을 사용하세요"
+  exit 2
+fi
+
 exit 0
