@@ -9,6 +9,7 @@ psycopg2-binary==2.9.12
 
 # For Celery (Background Jobs)
 celery[redis]==5.5.3
+redis==5.2.1
 
 # For Monitoring
 prometheus-fastapi-instrumentator==7.1.0

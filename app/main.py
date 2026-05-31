@@ -3,6 +3,7 @@ import time
 from contextlib import asynccontextmanager
 from typing import Any
 
+import redis
 from fastapi import Depends, FastAPI, HTTPException, Request, status
 from prometheus_fastapi_instrumentator import Instrumentator
 from slowapi.middleware import SlowAPIMiddleware
@@ -16,6 +17,7 @@ from .config import settings
 from .dependencies import (
     WebhookVerifier,
     get_current_user,
+    get_redis,
     get_tenant_id_from_path,
     limiter,
 )
@@ -111,6 +113,14 @@ async def health_check():
 # --- Webhook Endpoints --- #
 
 
+def _extract_event_id(source: str, request: Request, payload: dict) -> str | None:
+    if source == "github":
+        return request.headers.get("X-GitHub-Delivery")
+    if source == "stripe":
+        return payload.get("id")
+    return None
+
+
 @app.post(
     "/webhooks/{tenant_id}/{source}",
     tags=["Webhooks"],
@@ -123,6 +133,7 @@ async def receive_webhook(
     request: Request,
     payload: dict[Any, Any],
     db: Session = Depends(database.get_db),
+    redis_client: redis.Redis = Depends(get_redis),
 ):
     """
     Receives webhooks from a specific tenant and source, verifies them,
@@ -139,6 +150,15 @@ async def receive_webhook(
             raise HTTPException(
                 status_code=404, detail=f"Source '{source}' not supported."
             )
+
+        # Idempotency check — 중복 웹훅 방지 (Stripe/GitHub 재시도 대응)
+        event_id = _extract_event_id(source, request, payload)
+        if event_id:
+            idempotency_key = f"webhook:idempotency:{source}:{event_id}"
+            if redis_client.get(idempotency_key):
+                logger.info(f"Duplicate {source} webhook ignored: {event_id}")
+                return {"message": "Webhook already processed."}
+            redis_client.setex(idempotency_key, 86400, "1")
 
         # Increment webhook total counter
         CUSTOMER_WEBHOOK_TOTAL.labels(customer_id=str(customer.id), source=source).inc()
