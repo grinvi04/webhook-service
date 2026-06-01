@@ -1,4 +1,5 @@
 version: '3.8'
+# 배포 이미지: DOCKER_IMAGE 환경변수로 지정. 미설정 시 기본값 사용.
 
 services:
   web:

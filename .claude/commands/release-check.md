@@ -144,6 +144,32 @@ git push origin develop
 
 ---
 
-## 최종 집계 (Agent D 완료 후)
+---
+
+### Agent E — CLAUDE.md 동기화 검증 (오케스트레이터 직접 실행 — Agent D 완료 후)
+
+**1. 커맨드 목록 drift 확인**
+```bash
+PROJECT_ROOT=/Users/grinvi04/project/webhook-service
+MISSING=""
+for cmd_file in "$PROJECT_ROOT/.claude/commands"/*.md; do
+  cmd_name=$(basename "$cmd_file" .md)
+  if ! grep -q "/$cmd_name" "$PROJECT_ROOT/CLAUDE.md"; then
+    MISSING="$MISSING /$cmd_name"
+  fi
+done
+if [[ -n "$MISSING" ]]; then
+  echo "❌ CLAUDE.md 미반영 커맨드:$MISSING"
+else
+  echo "✅ CLAUDE.md 커맨드 목록 동기화됨"
+fi
+```
+
+**2. drift 발견 시** CLAUDE.md 슬래시 커맨드 목록 업데이트 후 fix/claudemd-sync 브랜치에 커밋 → develop 머지.
+drift 없으면 커밋 생략.
+
+---
+
+## 최종 집계 (Agent E 완료 후)
 
 모두 ✅이면 "**배포 준비 완료**" 메시지 출력.
