@@ -33,7 +33,7 @@ def db_session_mock():
 @pytest.fixture
 def redis_mock():
     mock = MagicMock()
-    mock.set.return_value = True  # 기본: 성공 (중복 없음)
+    mock.set = AsyncMock(return_value=True)  # 기본: 성공 (중복 없음)
     return mock
 
 

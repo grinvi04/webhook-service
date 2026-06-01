@@ -3,14 +3,13 @@ import hmac
 import logging
 from typing import Any
 
-import redis
+import redis.asyncio as aioredis
 import stripe
 from fastapi import HTTPException, Request, status
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
 
-from .config import settings
 from .database import SessionLocal
 from .models.customer import Customer
 
@@ -25,11 +24,8 @@ def get_db():
         db.close()
 
 
-_redis_client = redis.from_url(settings.redis_url, decode_responses=False)
-
-
-def get_redis() -> redis.Redis:
-    return _redis_client
+def get_redis(request: Request) -> aioredis.Redis:
+    return request.app.state.redis
 
 
 def get_tenant_id_from_path(request: Request) -> str | None:
