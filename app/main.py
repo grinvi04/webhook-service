@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import time
 from contextlib import asynccontextmanager
@@ -155,7 +156,9 @@ async def receive_webhook(
         event_id = _extract_event_id(source, request, payload)
         if event_id:
             idempotency_key = f"webhook:idempotency:{source}:{event_id}"
-            if not redis_client.set(idempotency_key, "1", ex=86400, nx=True):
+            if not await asyncio.to_thread(
+                redis_client.set, idempotency_key, "1", ex=86400, nx=True
+            ):
                 logger.info(f"Duplicate {source} webhook ignored: {event_id}")
                 return {"message": "Webhook already processed."}
 
