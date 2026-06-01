@@ -326,7 +326,7 @@ def test_github_webhook_idempotent_duplicate(client, redis_mock):
     delivery_id = "abc-123-delivery"
 
     # 두 번째 요청: Redis에 이미 처리된 키 존재 (set nx=True가 False 반환)
-    redis_mock.set = AsyncMock(return_value=False)
+    redis_mock.set.return_value = False
 
     response = test_client.post(
         f"/webhooks/{tenant_id}/github",
@@ -344,7 +344,7 @@ def test_stripe_webhook_idempotent_duplicate(client, redis_mock):
     tenant_id = "some-tenant"
 
     # 두 번째 요청: Redis에 이미 처리된 키 존재 (set nx=True가 False 반환)
-    redis_mock.set = AsyncMock(return_value=False)
+    redis_mock.set.return_value = False
 
     response = test_client.post(
         f"/webhooks/{tenant_id}/stripe",
