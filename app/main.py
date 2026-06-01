@@ -155,10 +155,9 @@ async def receive_webhook(
         event_id = _extract_event_id(source, request, payload)
         if event_id:
             idempotency_key = f"webhook:idempotency:{source}:{event_id}"
-            if redis_client.get(idempotency_key):
+            if not redis_client.set(idempotency_key, "1", ex=86400, nx=True):
                 logger.info(f"Duplicate {source} webhook ignored: {event_id}")
                 return {"message": "Webhook already processed."}
-            redis_client.setex(idempotency_key, 86400, "1")
 
         # Increment webhook total counter
         CUSTOMER_WEBHOOK_TOTAL.labels(customer_id=str(customer.id), source=source).inc()

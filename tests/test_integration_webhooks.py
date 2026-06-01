@@ -33,7 +33,7 @@ def db_session_mock():
 @pytest.fixture
 def redis_mock():
     mock = MagicMock()
-    mock.get.return_value = None  # 기본: 중복 없음
+    mock.set.return_value = True  # 기본: 성공 (중복 없음)
     return mock
 
 
@@ -325,8 +325,8 @@ def test_github_webhook_idempotent_duplicate(client, redis_mock):
     tenant_id = "some-tenant"
     delivery_id = "abc-123-delivery"
 
-    # 두 번째 요청: Redis에 이미 처리된 키 존재
-    redis_mock.get.return_value = b"1"
+    # 두 번째 요청: Redis에 이미 처리된 키 존재 (set nx=True가 False 반환)
+    redis_mock.set.return_value = False
 
     response = test_client.post(
         f"/webhooks/{tenant_id}/github",
@@ -343,8 +343,8 @@ def test_stripe_webhook_idempotent_duplicate(client, redis_mock):
     test_client, mock_task, _, _ = client
     tenant_id = "some-tenant"
 
-    # 두 번째 요청: Redis에 이미 처리된 키 존재
-    redis_mock.get.return_value = b"1"
+    # 두 번째 요청: Redis에 이미 처리된 키 존재 (set nx=True가 False 반환)
+    redis_mock.set.return_value = False
 
     response = test_client.post(
         f"/webhooks/{tenant_id}/stripe",
