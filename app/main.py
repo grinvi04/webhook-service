@@ -1,10 +1,9 @@
-import asyncio
 import logging
 import time
 from contextlib import asynccontextmanager
 from typing import Any
 
-import redis
+import redis.asyncio as aioredis
 from fastapi import Depends, FastAPI, HTTPException, Request, status
 from prometheus_fastapi_instrumentator import Instrumentator
 from slowapi.middleware import SlowAPIMiddleware
@@ -134,7 +133,7 @@ async def receive_webhook(
     request: Request,
     payload: dict[Any, Any],
     db: Session = Depends(database.get_db),
-    redis_client: redis.Redis = Depends(get_redis),
+    redis_client: aioredis.Redis = Depends(get_redis),
 ):
     """
     Receives webhooks from a specific tenant and source, verifies them,
@@ -156,9 +155,7 @@ async def receive_webhook(
         event_id = _extract_event_id(source, request, payload)
         if event_id:
             idempotency_key = f"webhook:idempotency:{source}:{event_id}"
-            if not await asyncio.to_thread(
-                redis_client.set, idempotency_key, "1", ex=86400, nx=True
-            ):
+            if not await redis_client.set(idempotency_key, "1", ex=86400, nx=True):
                 logger.info(f"Duplicate {source} webhook ignored: {event_id}")
                 return {"message": "Webhook already processed."}
 

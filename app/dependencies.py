@@ -3,7 +3,7 @@ import hmac
 import logging
 from typing import Any
 
-import redis
+import redis.asyncio as aioredis
 import stripe
 from fastapi import HTTPException, Request, status
 from slowapi import Limiter
@@ -25,13 +25,13 @@ def get_db():
         db.close()
 
 
-_redis_client: redis.Redis | None = None
+_redis_client: aioredis.Redis | None = None
 
 
-def get_redis() -> redis.Redis:
+async def get_redis() -> aioredis.Redis:
     global _redis_client
     if _redis_client is None:
-        _redis_client = redis.from_url(settings.redis_url, decode_responses=False)
+        _redis_client = aioredis.from_url(settings.redis_url, decode_responses=False)
     return _redis_client
 
 
