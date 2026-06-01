@@ -8,7 +8,7 @@ from prometheus_client import REGISTRY
 import app.database
 import app.main
 import app.webhook_registry
-from app.dependencies import get_current_user
+from app.dependencies import get_current_user, get_redis
 from app.metrics import CUSTOMER_WEBHOOK_TOTAL
 from app.models.customer import Customer
 from app.models.webhook_event import WebhookEvent
@@ -31,7 +31,15 @@ def db_session_mock():
 
 
 @pytest.fixture
-def client(mocker, db_session_mock):
+def redis_mock():
+    mock = MagicMock()
+    mock.get.return_value = None  # 기본: 중복 없음
+    return mock
+
+
+@pytest.fixture
+def client(mocker, db_session_mock, redis_mock):
+    app.main.app.dependency_overrides[get_redis] = lambda: redis_mock
     app.main.app.dependency_overrides[app.database.get_db] = lambda: db_session_mock
 
     mock_task = MagicMock()
@@ -309,6 +317,42 @@ def test_replay_event_event_not_found_for_tenant(client, db_session_mock, mocker
 
     assert response.status_code == 404
     assert "Event not found for this tenant" in response.text
+
+
+def test_github_webhook_idempotent_duplicate(client, redis_mock):
+    """동일 X-GitHub-Delivery ID로 두 번 요청 시 두 번째는 큐잉 없이 202 반환."""
+    test_client, mock_task, _, _ = client
+    tenant_id = "some-tenant"
+    delivery_id = "abc-123-delivery"
+
+    # 두 번째 요청: Redis에 이미 처리된 키 존재
+    redis_mock.get.return_value = b"1"
+
+    response = test_client.post(
+        f"/webhooks/{tenant_id}/github",
+        json={"action": "opened"},
+        headers={"X-GitHub-Delivery": delivery_id},
+    )
+
+    assert response.status_code == 202
+    mock_task.apply_async.assert_not_called()
+
+
+def test_stripe_webhook_idempotent_duplicate(client, redis_mock):
+    """동일 Stripe event ID로 두 번 요청 시 두 번째는 큐잉 없이 202 반환."""
+    test_client, mock_task, _, _ = client
+    tenant_id = "some-tenant"
+
+    # 두 번째 요청: Redis에 이미 처리된 키 존재
+    redis_mock.get.return_value = b"1"
+
+    response = test_client.post(
+        f"/webhooks/{tenant_id}/stripe",
+        json={"id": "evt_duplicate_123", "type": "payment_intent.succeeded"},
+    )
+
+    assert response.status_code == 202
+    mock_task.apply_async.assert_not_called()
 
 
 def test_replay_event_data_isolation(client, db_session_mock, mocker):

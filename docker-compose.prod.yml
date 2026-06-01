@@ -1,10 +1,11 @@
 version: '3.8'
+# 배포 이미지: DOCKER_IMAGE 환경변수로 지정. 미설정 시 기본값 사용.
 
 services:
   web:
     # In production, we use a pre-built image from a container registry.
     # Replace this with your actual image name.
-    image: ghcr.io/${{ github.repository }}:latest
+    image: ${DOCKER_IMAGE:-ghcr.io/grinvi04/webhook-service:latest}
     ports:
       - "8000:80"
     env_file:
@@ -17,7 +18,7 @@ services:
 
   worker:
     # Use the same pre-built image
-    image: ghcr.io/${{ github.repository }}:latest
+    image: ${DOCKER_IMAGE:-ghcr.io/grinvi04/webhook-service:latest}
     command: celery -A app.celery_worker.celery worker --loglevel=info -Q default,dead_letters
     env_file:
       - .env
@@ -29,7 +30,7 @@ services:
 
   priority-worker:
     # Use the same pre-built image
-    image: ghcr.io/${{ github.repository }}:latest
+    image: ${DOCKER_IMAGE:-ghcr.io/grinvi04/webhook-service:latest}
     command: celery -A app.celery_worker.celery worker --loglevel=info -Q high_priority
     env_file:
       - .env

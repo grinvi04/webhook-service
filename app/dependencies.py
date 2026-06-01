@@ -3,12 +3,14 @@ import hmac
 import logging
 from typing import Any
 
+import redis
 import stripe
 from fastapi import HTTPException, Request, status
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
 
+from .config import settings
 from .database import SessionLocal
 from .models.customer import Customer
 
@@ -21,6 +23,14 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+def get_redis() -> redis.Redis:
+    client = redis.from_url(settings.redis_url, decode_responses=False)
+    try:
+        yield client
+    finally:
+        client.close()
 
 
 def get_tenant_id_from_path(request: Request) -> str | None:
