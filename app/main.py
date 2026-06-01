@@ -47,7 +47,10 @@ keycloak_openid = KeycloakOpenID(
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Application startup.")
+    app.state.redis = aioredis.from_url(settings.redis_url, decode_responses=False)
     yield
+    await app.state.redis.close()
+    logger.info("Application shutdown.")
 
 
 app = FastAPI(
