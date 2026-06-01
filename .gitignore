@@ -121,5 +121,5 @@ dmypy.json
 .gemini/
 gha-creds-*.json
 
-# Claude Code local settings (machine-specific)
-.claude/settings.local.json
+# Claude Code — 작업 설정 비공개
+.claude/
