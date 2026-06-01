@@ -25,12 +25,11 @@ def get_db():
         db.close()
 
 
+_redis_client = redis.from_url(settings.redis_url, decode_responses=False)
+
+
 def get_redis() -> redis.Redis:
-    client = redis.from_url(settings.redis_url, decode_responses=False)
-    try:
-        yield client
-    finally:
-        client.close()
+    return _redis_client
 
 
 def get_tenant_id_from_path(request: Request) -> str | None:
