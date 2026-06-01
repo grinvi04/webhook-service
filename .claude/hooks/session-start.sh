@@ -44,4 +44,24 @@ else
 fi
 
 echo ""
+
+# CLAUDE.md 커맨드 목록 drift 감지
+COMMANDS_DIR="$PROJECT_ROOT/.claude/commands"
+if [[ -d "$COMMANDS_DIR" ]]; then
+  MISSING=""
+  for cmd_file in "$COMMANDS_DIR"/*.md; do
+    cmd_name=$(basename "$cmd_file" .md)
+    if ! grep -q "/$cmd_name" "$PROJECT_ROOT/CLAUDE.md" 2>/dev/null; then
+      MISSING="$MISSING /$cmd_name"
+    fi
+  done
+  if [[ -n "$MISSING" ]]; then
+    echo "⚠️  CLAUDE.md 커맨드 목록 미반영:$MISSING"
+    echo "   → CLAUDE.md '슬래시 커맨드' 항목 업데이트 필요"
+  else
+    echo "✅ CLAUDE.md 커맨드 목록 동기화됨"
+  fi
+fi
+
+echo ""
 echo "전체 작업 현황은 /release-check 실행"
