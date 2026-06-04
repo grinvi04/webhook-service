@@ -123,3 +123,6 @@ gha-creds-*.json
 
 # Claude Code — 작업 설정 비공개
 .claude/
+
+# Claude Code / Harness
+CLAUDE.md
