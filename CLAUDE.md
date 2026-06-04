@@ -21,6 +21,7 @@
 | 상황 | 커맨드 |
 |---|---|
 | 운영 중 긴급 버그 (main 기준) | `/hotfix <name> "<증상>"` |
+| 배포 중 버그·긴급 수정 (develop 기준) | `/feature-modify <name> "<설명>"` → fix/* 브랜치 사용 |
 | 신규 기능 개발 (develop 기준) | `/feature-add <name> "<설명>"` |
 | 기존 기능 변경 (develop 기준) | `/feature-modify <name> "<설명>"` |
 | feature 브랜치 → develop 머지 | `/feature-merge` |
