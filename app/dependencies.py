@@ -1,3 +1,4 @@
+import asyncio
 import hashlib
 import hmac
 import logging
@@ -21,13 +22,15 @@ _keycloak_public_key_cache: dict = {"key": None, "expires_at": 0.0}
 _KEYCLOAK_KEY_TTL = 300  # 5분
 
 
-def _get_keycloak_public_key(keycloak_openid) -> str:
+async def _get_keycloak_public_key(keycloak_openid) -> str:
     now = time.time()
     if (
         _keycloak_public_key_cache["key"] is None
         or now >= _keycloak_public_key_cache["expires_at"]
     ):
-        _keycloak_public_key_cache["key"] = keycloak_openid.public_key()
+        _keycloak_public_key_cache["key"] = await asyncio.to_thread(
+            keycloak_openid.public_key
+        )
         _keycloak_public_key_cache["expires_at"] = now + _KEYCLOAK_KEY_TTL
     return _keycloak_public_key_cache["key"]
 
@@ -85,7 +88,7 @@ async def get_current_user(request: Request) -> dict[str, Any]:
 
         user_info = keycloak_openid.decode_token(
             access_token,
-            key=_get_keycloak_public_key(keycloak_openid),
+            key=await _get_keycloak_public_key(keycloak_openid),
             options={"verify_signature": True, "verify_aud": False, "exp": True},
         )
 

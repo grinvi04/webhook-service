@@ -29,7 +29,9 @@ class KeycloakAuth(AuthenticationBackend):
         if not token:
             return False
         try:
-            payload = json.loads(base64.b64decode(token.split(".")[1] + "=="))
+            payload_b64 = token.split(".")[1]
+            payload_b64 += "=" * ((4 - len(payload_b64) % 4) % 4)
+            payload = json.loads(base64.urlsafe_b64decode(payload_b64))
             if payload.get("exp", 0) < time.time():
                 request.session.clear()
                 return False

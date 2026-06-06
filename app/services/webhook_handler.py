@@ -21,10 +21,6 @@ def send_to_dlq(failed_task_data: dict):
 
 def _handle_task_failure(task, exc, task_id, args, kwargs, einfo):
     customer_id = args[0] if args else "Unknown"
-    source = task.name.split(".")[-1].replace("_webhook_task", "")
-    CUSTOMER_WEBHOOK_ERRORS_TOTAL.labels(
-        customer_id=str(customer_id), source=source, error_type=str(type(exc).__name__)
-    ).inc()
     send_to_dlq.apply_async(
         args=[
             {
@@ -53,8 +49,10 @@ def process_github_webhook_task(self, customer_id: UUID, payload_dict: dict):
         sender = payload.sender.get("login")
         repo = payload.repository.get("full_name")
         logger.info(
-            f"Processing GitHub event from {sender} "
-            f"for repo {repo} for customer {customer_id}"
+            "Processing GitHub event from %s for repo %s for customer %s",
+            sender,
+            repo,
+            customer_id,
         )
 
         db_event = WebhookEvent(
@@ -64,7 +62,9 @@ def process_github_webhook_task(self, customer_id: UUID, payload_dict: dict):
         db.commit()
         db.refresh(db_event)
         logger.info(
-            f"Saved webhook event {db_event.id} for customer {customer_id} to database."
+            "Saved webhook event %s for customer %s to database.",
+            db_event.id,
+            customer_id,
         )
 
     except Exception as e:
@@ -103,7 +103,9 @@ def process_stripe_webhook_task(self, customer_id: UUID, payload_dict: dict):
         db.commit()
         db.refresh(db_event)
         logger.info(
-            f"Saved webhook event {db_event.id} for customer {customer_id} to database."
+            "Saved webhook event %s for customer %s to database.",
+            db_event.id,
+            customer_id,
         )
 
     except Exception as e:
