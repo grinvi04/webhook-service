@@ -5,10 +5,13 @@ from typing import Any
 
 import redis.asyncio as aioredis
 from fastapi import Depends, FastAPI, HTTPException, Request, status
+from fastapi.responses import JSONResponse
 from prometheus_fastapi_instrumentator import Instrumentator
 from slowapi.middleware import SlowAPIMiddleware
 from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
+from starlette.middleware.sessions import SessionMiddleware
 
 from keycloak import KeycloakOpenID
 
@@ -73,19 +76,14 @@ Instrumentator().instrument(app).expose(app)
 app.state.limiter = limiter
 app.add_middleware(SlowAPIMiddleware)
 
+# SessionMiddleware required for request.session usage in admin.py
+app.add_middleware(SessionMiddleware, secret_key=settings.session_secret)
 
-# Keycloak 인증 미들웨어 (예시, 실제 구현은 더 복잡할 수 있음)
-@app.middleware("http")
-async def add_keycloak_auth_middleware(request: Request, call_next):
-    if request.url.path.startswith("/admin"):
-        # 여기에 Keycloak 토큰 검증 로직 추가
-        # 예: request.headers.get("Authorization")에서 토큰 추출 및 검증
-        # 유효하지 않은 경우 HTTPException(status_code=401) 발생
-        # 이 부분은 실제 Keycloak 연동 로직에 따라 구현해야 합니다.
-        # 현재는 단순히 통과시키거나, 더미 인증을 수행할 수 있습니다.
-        pass
-    response = await call_next(request)
-    return response
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    logger.error("Unhandled exception: %s", exc, exc_info=True)
+    return JSONResponse(status_code=500, content={"detail": "Internal Server Error"})
 
 
 @app.get("/", tags=["Root"])
@@ -109,7 +107,7 @@ async def health_check():
         logger.info("Health check successful.")
         return {"status": "ok"}
     except Exception as e:
-        logger.error(f"Health check failed: {e}")
+        logger.error("Health check failed: %s", e)
         raise HTTPException(status_code=503, detail="Service Unavailable")
 
 
@@ -135,7 +133,7 @@ async def receive_webhook(
     source: str,
     request: Request,
     payload: dict[Any, Any],
-    db: Session = Depends(database.get_db),
+    db: AsyncSession = Depends(database.get_async_db),
     redis_client: aioredis.Redis = Depends(get_redis),
 ):
     """
@@ -159,7 +157,7 @@ async def receive_webhook(
         if event_id:
             idempotency_key = f"webhook:idempotency:{source}:{event_id}"
             if not await redis_client.set(idempotency_key, "1", ex=86400, nx=True):
-                logger.info(f"Duplicate {source} webhook ignored: {event_id}")
+                logger.info("Duplicate %s webhook ignored: %s", source, event_id)
                 return {"message": "Webhook already processed."}
 
         # Increment webhook total counter
@@ -242,7 +240,7 @@ def replay_event(
     )
 
     if not db_event:
-        logger.warning(f"Event with id {event_id} not found for tenant {tenant_id}.")
+        logger.warning("Event with id %s not found for tenant %s.", event_id, tenant_id)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Event not found for this tenant",
@@ -253,11 +251,13 @@ def replay_event(
         # Pass customer_id to the task for replay
         task.delay(db_event.customer_id, db_event.payload)
     except NotImplementedError:
-        logger.error(f"Replay not implemented for source: {db_event.source}")
+        logger.error("Replay not implemented for source: %s", db_event.source)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Replay not implemented for source '{db_event.source}'",
         )
 
-    logger.info(f"Successfully re-queued event_id: {event_id} for tenant {tenant_id}.")
+    logger.info(
+        "Successfully re-queued event_id: %s for tenant %s.", event_id, tenant_id
+    )
     return {"message": f"Event {event_id} has been re-queued for processing."}

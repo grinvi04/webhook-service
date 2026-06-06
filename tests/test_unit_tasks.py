@@ -1,12 +1,18 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from prometheus_client import REGISTRY
 
+from app.metrics import CUSTOMER_WEBHOOK_ERRORS_TOTAL
 from app.models.webhook_event import WebhookEvent
 from app.services.webhook_handler import process_github_webhook_task
 
-_ERRORS_METRIC = "customer_webhook_errors_total"
+
+def _counter_value(counter, **labels):
+    for metric in counter.collect():
+        for sample in metric.samples:
+            if sample.name.endswith("_total") and sample.labels == labels:
+                return sample.value
+    return 0.0
 
 
 def test_process_github_webhook_task_success():
@@ -41,13 +47,11 @@ def test_process_github_webhook_task_failure_metrics():
     customer_id = "test_customer_123"
     payload = {"invalid_key": "value"}
 
-    error_labels = {
-        "customer_id": customer_id,
-        "source": "github",
-        "error_type": "ValueError",
-    }
-    initial_error_total = (
-        REGISTRY.get_sample_value(_ERRORS_METRIC, labels=error_labels) or 0
+    initial_error_total = _counter_value(
+        CUSTOMER_WEBHOOK_ERRORS_TOTAL,
+        customer_id=customer_id,
+        source="github",
+        error_type="ValueError",
     )
 
     with (
@@ -63,7 +67,12 @@ def test_process_github_webhook_task_failure_metrics():
             process_github_webhook_task.run(customer_id, payload)
 
     assert (
-        REGISTRY.get_sample_value(_ERRORS_METRIC, labels=error_labels)
+        _counter_value(
+            CUSTOMER_WEBHOOK_ERRORS_TOTAL,
+            customer_id=customer_id,
+            source="github",
+            error_type="ValueError",
+        )
         == initial_error_total + 1
     )
 
