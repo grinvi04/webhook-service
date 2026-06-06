@@ -1,8 +1,13 @@
+import base64
+import json
+import time
+
 from fastapi import Request, Response
 from sqladmin import Admin, ModelView
 from sqladmin.authentication import AuthenticationBackend
 from starlette.responses import RedirectResponse
 
+from .config import settings
 from .models.webhook_event import WebhookEvent
 
 
@@ -16,16 +21,27 @@ class KeycloakAuth(AuthenticationBackend):
         return RedirectResponse(auth_url)
 
     async def logout(self, request: Request) -> bool:
-        # Clear the session.
         request.session.clear()
         return True
 
     async def authenticate(self, request: Request) -> bool:
-        # Check if the user is logged in.
-        return "token" in request.session
+        token = request.session.get("token")
+        if not token:
+            return False
+        try:
+            payload_b64 = token.split(".")[1]
+            payload_b64 += "=" * ((4 - len(payload_b64) % 4) % 4)
+            payload = json.loads(base64.urlsafe_b64decode(payload_b64))
+            if payload.get("exp", 0) < time.time():
+                request.session.clear()
+                return False
+            return True
+        except Exception:
+            request.session.clear()
+            return False
 
 
-authentication_backend = KeycloakAuth(secret_key="a-very-secret-key")
+authentication_backend = KeycloakAuth(secret_key=settings.session_secret)
 
 
 class WebhookEventAdmin(ModelView, model=WebhookEvent):

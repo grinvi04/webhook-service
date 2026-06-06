@@ -41,6 +41,9 @@ def redis_mock():
 def client(mocker, db_session_mock, redis_mock):
     app.main.app.dependency_overrides[get_redis] = lambda: redis_mock
     app.main.app.dependency_overrides[app.database.get_db] = lambda: db_session_mock
+    app.main.app.dependency_overrides[app.database.get_async_db] = lambda: (
+        db_session_mock
+    )
 
     mock_task = MagicMock()
     mocker.patch("app.main.get_task", return_value=mock_task)

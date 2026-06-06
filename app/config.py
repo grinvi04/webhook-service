@@ -15,6 +15,8 @@ class Settings(BaseSettings):
     admin_username: str | None = None
     admin_password: str | None = None
 
+    session_secret: str
+
     keycloak_url: str = "http://localhost:8080"
     keycloak_realm: str = "webhook-service"
     keycloak_client_id: str = "webhook-admin-client"

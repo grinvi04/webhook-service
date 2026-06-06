@@ -5,7 +5,7 @@
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.117-green.svg)
 ![License](https://img.shields.io/github/license/grinvi04/webhook-service)
 ![Tests](https://img.shields.io/badge/tests-14%20passed-brightgreen)
-![Version](https://img.shields.io/badge/version-1.0.0-blue)
+![Version](https://img.shields.io/badge/version-1.2.0-blue)
 
 FastAPI + Celery + PostgreSQL + Redis 기반의 멀티테넌트 웹훅 처리 서비스입니다.  
 HMAC-SHA256 서명 검증, 비동기 큐 처리, 자동 재시도, Prometheus 모니터링을 갖춘 프로덕션 수준의 구현체입니다.

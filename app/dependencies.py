@@ -1,6 +1,8 @@
+import asyncio
 import hashlib
 import hmac
 import logging
+import time
 from typing import Any
 
 import redis.asyncio as aioredis
@@ -8,20 +10,29 @@ import stripe
 from fastapi import HTTPException, Request, status
 from slowapi import Limiter
 from slowapi.util import get_remote_address
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 
-from .database import SessionLocal
 from .models.customer import Customer
 
 logger = logging.getLogger(__name__)
 
+_keycloak_public_key_cache: dict = {"key": None, "expires_at": 0.0}
+_KEYCLOAK_KEY_TTL = 300  # 5분
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+
+async def _get_keycloak_public_key(keycloak_openid) -> str:
+    now = time.time()
+    if (
+        _keycloak_public_key_cache["key"] is None
+        or now >= _keycloak_public_key_cache["expires_at"]
+    ):
+        _keycloak_public_key_cache["key"] = await asyncio.to_thread(
+            keycloak_openid.public_key
+        )
+        _keycloak_public_key_cache["expires_at"] = now + _KEYCLOAK_KEY_TTL
+    return _keycloak_public_key_cache["key"]
 
 
 def get_redis(request: Request) -> aioredis.Redis:
@@ -75,10 +86,9 @@ async def get_current_user(request: Request) -> dict[str, Any]:
         # app.state에 저장된 keycloak_openid 객체 사용
         keycloak_openid = request.app.state.keycloak_openid
 
-        # 토큰 검증 및 디코딩
         user_info = keycloak_openid.decode_token(
             access_token,
-            key=keycloak_openid.public_key(),  # Keycloak에서 공개 키를 가져와야 합니다.
+            key=await _get_keycloak_public_key(keycloak_openid),
             options={"verify_signature": True, "verify_aud": False, "exp": True},
         )
 
@@ -93,7 +103,7 @@ async def get_current_user(request: Request) -> dict[str, Any]:
         return user_info
 
     except Exception as e:
-        logger.error(f"Keycloak token validation failed: {e}")
+        logger.error("Keycloak token validation failed: %s", e)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials",
@@ -110,8 +120,8 @@ class WebhookVerifier:
     def __init__(self, source: str):
         self.source = source
 
-    async def __call__(self, request: Request, tenant_id: str, db: Session):
-        customer = self._get_customer(db, tenant_id)
+    async def __call__(self, request: Request, tenant_id: str, db: AsyncSession):
+        customer = await self._get_customer_async(db, tenant_id)
         if not customer:
             raise HTTPException(status_code=404, detail="Tenant not found.")
 
@@ -123,15 +133,26 @@ class WebhookVerifier:
         elif self.source == "stripe":
             await self._verify_stripe(request, body, secret)
         else:
-            logger.error(f"Verifier for source '{self.source}' is not implemented.")
+            logger.error("Verifier for source '%s' is not implemented.", self.source)
             raise HTTPException(
                 status_code=501,
                 detail=f"Verifier for source '{self.source}' is not implemented.",
             )
-        return customer  # Return customer for use in the endpoint
+        return customer
 
     def _get_customer(self, db: Session, tenant_id: str) -> Customer | None:
         customer = db.query(Customer).filter(Customer.tenant_id == tenant_id).first()
+        if customer and not customer.is_active:
+            raise HTTPException(status_code=403, detail="Tenant is inactive.")
+        return customer
+
+    async def _get_customer_async(
+        self, db: AsyncSession, tenant_id: str
+    ) -> Customer | None:
+        result = await db.execute(
+            select(Customer).where(Customer.tenant_id == tenant_id)
+        )
+        customer = result.scalar_one_or_none()
         if customer and not customer.is_active:
             raise HTTPException(status_code=403, detail="Tenant is inactive.")
         return customer
