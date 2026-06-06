@@ -1,16 +1,5 @@
 # Webhook Service — Claude Code 작업 규칙
 
-## 행동 원칙
-
-**코딩 전에 생각**: 가정을 명시. 불명확하면 멈추고 질문. 여러 해석이 가능하면 제시하고 선택받을 것.
-
-**단순함 우선**: 요청한 것만 구현. 추측성 기능·추상화·유연성 금지. 50줄로 되면 200줄 쓰지 말 것.
-
-**외과적 변경**: 건드려야 할 것만 건드림. 인접 코드·포맷 개선 금지. 내 변경이 만든 orphan(미사용 import 등)만 정리.
-
-**목표 기반 실행**: 작업을 검증 가능한 목표로 변환. "버그 수정" → "재현 테스트 작성 후 통과시키기".
-
----
 
 ## 커맨드 강제 사용 규칙
 
@@ -193,3 +182,18 @@ DYLD_LIBRARY_PATH=/opt/homebrew/opt/expat/lib \
 ```
 
 커밋 메시지 형식: `타입(범위): 제목` + `Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>`
+
+---
+
+## Compact Instructions
+
+컨텍스트 압축 후에도 반드시 유지해야 할 핵심 규칙:
+
+1. **슬래시 커맨드 강제**: 파일 수정·git 작업 전 반드시 해당 커맨드 선언 후 사용자 확인. 예외 없음.
+2. **Git Flow**: `main`, `develop` 직접 커밋 절대 금지. 반드시 feature/fix/hotfix/release 브랜치 → PR 경유.
+3. **커맨드 우회 금지**: 커맨드 파일의 Phase 순서·서브에이전트·검증 게이트를 정확히 따른다.
+4. **macOS 15 필수 prefix**: 모든 Python 명령 앞에 `DYLD_LIBRARY_PATH=/opt/homebrew/opt/expat/lib` 추가.
+5. **로컬 DB 포트**: 호스트 **5433** (Docker 내부 서비스 간은 `db:5432` 그대로).
+6. **순환 임포트 방지**: Prometheus 메트릭은 `app/metrics.py`에만 정의. `admin.py`에서 `main.py` import 금지.
+7. **HMAC 비교**: 반드시 `hmac.compare_digest()` 사용 (`==` 금지 — 타이밍 공격).
+8. **테스트 규칙**: FastAPI 의존성 모킹 시 `dependency_overrides` 사용 필수. Prometheus 메트릭 검증 시 `collect()` 패턴 사용 필수.
