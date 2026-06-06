@@ -196,3 +196,4 @@ DYLD_LIBRARY_PATH=/opt/homebrew/opt/expat/lib \
 5. **로컬 DB 포트**: 호스트 **5433** (Docker 내부 서비스 간은 `db:5432` 그대로).
 6. **순환 임포트 방지**: Prometheus 메트릭은 `app/metrics.py`에만 정의. `admin.py`에서 `main.py` import 금지.
 7. **HMAC 비교**: 반드시 `hmac.compare_digest()` 사용 (`==` 금지 — 타이밍 공격).
+8. **테스트 규칙**: FastAPI 의존성 모킹 시 `dependency_overrides` 사용 필수. Prometheus 메트릭 검증 시 `collect()` 패턴 사용 필수.
