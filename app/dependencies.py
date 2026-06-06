@@ -1,6 +1,7 @@
 import hashlib
 import hmac
 import logging
+import time
 from typing import Any
 
 import redis.asyncio as aioredis
@@ -15,6 +16,20 @@ from sqlalchemy.orm import Session
 from .models.customer import Customer
 
 logger = logging.getLogger(__name__)
+
+_keycloak_public_key_cache: dict = {"key": None, "expires_at": 0.0}
+_KEYCLOAK_KEY_TTL = 300  # 5분
+
+
+def _get_keycloak_public_key(keycloak_openid) -> str:
+    now = time.time()
+    if (
+        _keycloak_public_key_cache["key"] is None
+        or now >= _keycloak_public_key_cache["expires_at"]
+    ):
+        _keycloak_public_key_cache["key"] = keycloak_openid.public_key()
+        _keycloak_public_key_cache["expires_at"] = now + _KEYCLOAK_KEY_TTL
+    return _keycloak_public_key_cache["key"]
 
 
 def get_redis(request: Request) -> aioredis.Redis:
@@ -68,10 +83,9 @@ async def get_current_user(request: Request) -> dict[str, Any]:
         # app.state에 저장된 keycloak_openid 객체 사용
         keycloak_openid = request.app.state.keycloak_openid
 
-        # 토큰 검증 및 디코딩
         user_info = keycloak_openid.decode_token(
             access_token,
-            key=keycloak_openid.public_key(),  # Keycloak에서 공개 키를 가져와야 합니다.
+            key=_get_keycloak_public_key(keycloak_openid),
             options={"verify_signature": True, "verify_aud": False, "exp": True},
         )
 

@@ -9,6 +9,7 @@ from ..database import SessionLocal
 from ..metrics import CUSTOMER_WEBHOOK_ERRORS_TOTAL
 from ..models.webhook_event import WebhookEvent
 from ..schemas.github_webhook import GitHubWebhookPayload
+from ..schemas.stripe_webhook import StripeWebhookPayload
 
 logger = logging.getLogger(__name__)
 
@@ -88,13 +89,15 @@ def process_github_webhook_task(self, customer_id: UUID, payload_dict: dict):
 def process_stripe_webhook_task(self, customer_id: UUID, payload_dict: dict):
     db: Session = SessionLocal()
     try:
-        event_type = payload_dict.get("type")
+        payload = StripeWebhookPayload.model_validate(payload_dict)
         logger.info(
-            f"Processing Stripe event type: {event_type} for customer {customer_id}"
+            "Processing Stripe event type: %s for customer %s",
+            payload.type,
+            customer_id,
         )
 
         db_event = WebhookEvent(
-            customer_id=customer_id, source="stripe", payload=payload_dict
+            customer_id=customer_id, source="stripe", payload=payload.model_dump()
         )
         db.add(db_event)
         db.commit()
