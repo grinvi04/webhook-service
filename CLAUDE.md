@@ -24,7 +24,7 @@
 
 **예외 (파일 편집에만 해당 — git 작업은 예외 없이 커맨드 필수)**:
 - `CLAUDE.md`, `README.md`, `requirements.txt`, `docker-compose*.yml` 등 **추적 파일**은 슬래시 커맨드 없이 편집하되, 커밋·PR은 아래 git 규칙을 따른다
-- `.claude/`는 `.gitignore`에 의해 Git 추적에서 제외되므로 git 작업 자체가 없다 → 직접 편집이 곧 반영. 커맨드/훅 변경은 harness 원본 수정 후 동기화
+- `.claude/`는 `.gitignore`에 의해 Git 추적에서 제외되므로 로컬 직접 편집은 해당 환경에만 반영되며 Git 커밋이 불가능하다. 따라서 커맨드/훅 변경은 반드시 harness 원본 수정 후 동기화해야 한다
 - 단, **추적 파일**의 브랜치 생성·커밋·머지는 반드시 위 커맨드를 통할 것. 직접 git 명령 금지.
 
 **커밋은 파일 종류와 무관하게 항상 feature/fix/hotfix/release 브랜치에서 할 것.**
