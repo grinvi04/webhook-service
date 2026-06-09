@@ -30,7 +30,7 @@ from .metrics import (
     CUSTOMER_WEBHOOK_TOTAL,
     WEBHOOK_PROCESSING_DURATION,
 )
-from .models.webhook_event import WebhookEvent
+from .repositories.webhook_event_repository import WebhookEventRepository
 from .webhook_registry import get_task
 
 setup_logging()
@@ -233,10 +233,8 @@ def replay_event(
         raise HTTPException(status_code=404, detail="Tenant not found or inactive.")
 
     # Filter by both event_id and customer_id to ensure data isolation
-    db_event = (
-        db.query(WebhookEvent)
-        .filter(WebhookEvent.id == event_id, WebhookEvent.customer_id == customer.id)
-        .first()
+    db_event = WebhookEventRepository.get_for_customer(
+        db, event_id=event_id, customer_id=customer.id
     )
 
     if not db_event:
