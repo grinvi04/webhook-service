@@ -233,7 +233,7 @@ def replay_event(
         raise HTTPException(status_code=404, detail="Tenant not found or inactive.")
 
     # Filter by both event_id and customer_id to ensure data isolation
-    db_event = WebhookEventRepository().get_for_customer(
+    db_event = WebhookEventRepository.get_for_customer(
         db, event_id=event_id, customer_id=customer.id
     )
 

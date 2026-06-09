@@ -141,7 +141,7 @@ class WebhookVerifier:
         return customer
 
     def _get_customer(self, db: Session, tenant_id: str) -> Customer | None:
-        customer = CustomerRepository().get_by_tenant_id(db, tenant_id)
+        customer = CustomerRepository.get_by_tenant_id(db, tenant_id)
         if customer and not customer.is_active:
             raise HTTPException(status_code=403, detail="Tenant is inactive.")
         return customer
@@ -149,7 +149,7 @@ class WebhookVerifier:
     async def _get_customer_async(
         self, db: AsyncSession, tenant_id: str
     ) -> Customer | None:
-        customer = await CustomerRepository().get_by_tenant_id_async(db, tenant_id)
+        customer = await CustomerRepository.get_by_tenant_id_async(db, tenant_id)
         if customer and not customer.is_active:
             raise HTTPException(status_code=403, detail="Tenant is inactive.")
         return customer

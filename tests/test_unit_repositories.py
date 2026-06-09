@@ -13,7 +13,7 @@ def test_customer_repo_get_by_tenant_id():
     sentinel = object()
     db.query.return_value.filter.return_value.first.return_value = sentinel
 
-    result = CustomerRepository().get_by_tenant_id(db, "tenant-1")
+    result = CustomerRepository.get_by_tenant_id(db, "tenant-1")
 
     assert result is sentinel
     db.query.return_value.filter.return_value.first.assert_called_once()
@@ -27,7 +27,7 @@ async def test_customer_repo_get_by_tenant_id_async():
     exec_result.scalar_one_or_none.return_value = sentinel
     db.execute = AsyncMock(return_value=exec_result)
 
-    result = await CustomerRepository().get_by_tenant_id_async(db, "tenant-1")
+    result = await CustomerRepository.get_by_tenant_id_async(db, "tenant-1")
 
     assert result is sentinel
     db.execute.assert_awaited_once()
@@ -38,7 +38,7 @@ def test_webhook_event_repo_create_persists_and_returns_event():
     customer_id = uuid4()
     payload = {"action": "starred"}
 
-    event = WebhookEventRepository().create(
+    event = WebhookEventRepository.create(
         db, customer_id=customer_id, source="github", payload=payload
     )
 
@@ -48,8 +48,9 @@ def test_webhook_event_repo_create_persists_and_returns_event():
     assert added.customer_id == customer_id
     assert added.source == "github"
     assert added.payload == payload
-    db.commit.assert_called_once()
-    db.refresh.assert_called_once_with(added)
+    # 트랜잭션 경계는 호출부 책임 — create는 add만 수행
+    db.commit.assert_not_called()
+    db.refresh.assert_not_called()
     assert event is added
 
 
@@ -59,7 +60,7 @@ def test_webhook_event_repo_get_for_customer_filters():
     db.query.return_value.filter.return_value.first.return_value = sentinel
     customer_id = uuid4()
 
-    result = WebhookEventRepository().get_for_customer(
+    result = WebhookEventRepository.get_for_customer(
         db, event_id=7, customer_id=customer_id
     )
 

@@ -55,9 +55,11 @@ def process_github_webhook_task(self, customer_id: UUID, payload_dict: dict):
             customer_id,
         )
 
-        db_event = WebhookEventRepository().create(
+        db_event = WebhookEventRepository.create(
             db, customer_id=customer_id, source="github", payload=payload.model_dump()
         )
+        db.commit()
+        db.refresh(db_event)
         logger.info(
             "Saved webhook event %s for customer %s to database.",
             db_event.id,
@@ -93,9 +95,11 @@ def process_stripe_webhook_task(self, customer_id: UUID, payload_dict: dict):
             customer_id,
         )
 
-        db_event = WebhookEventRepository().create(
+        db_event = WebhookEventRepository.create(
             db, customer_id=customer_id, source="stripe", payload=payload.model_dump()
         )
+        db.commit()
+        db.refresh(db_event)
         logger.info(
             "Saved webhook event %s for customer %s to database.",
             db_event.id,

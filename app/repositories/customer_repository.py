@@ -12,11 +12,13 @@ class CustomerRepository:
     웹 레이어(WebhookVerifier)에 두고, 여기서는 조회만 한다.
     """
 
-    def get_by_tenant_id(self, db: Session, tenant_id: str) -> Customer | None:
+    @classmethod
+    def get_by_tenant_id(cls, db: Session, tenant_id: str) -> Customer | None:
         return db.query(Customer).filter(Customer.tenant_id == tenant_id).first()
 
+    @classmethod
     async def get_by_tenant_id_async(
-        self, db: AsyncSession, tenant_id: str
+        cls, db: AsyncSession, tenant_id: str
     ) -> Customer | None:
         result = await db.execute(
             select(Customer).where(Customer.tenant_id == tenant_id)
