@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from ..celery_worker import celery
 from ..database import SessionLocal
 from ..metrics import CUSTOMER_WEBHOOK_ERRORS_TOTAL
-from ..models.webhook_event import WebhookEvent
+from ..repositories.webhook_event_repository import WebhookEventRepository
 from ..schemas.github_webhook import GitHubWebhookPayload
 from ..schemas.stripe_webhook import StripeWebhookPayload
 
@@ -55,12 +55,9 @@ def process_github_webhook_task(self, customer_id: UUID, payload_dict: dict):
             customer_id,
         )
 
-        db_event = WebhookEvent(
-            customer_id=customer_id, source="github", payload=payload.model_dump()
+        db_event = WebhookEventRepository().create(
+            db, customer_id=customer_id, source="github", payload=payload.model_dump()
         )
-        db.add(db_event)
-        db.commit()
-        db.refresh(db_event)
         logger.info(
             "Saved webhook event %s for customer %s to database.",
             db_event.id,
@@ -96,12 +93,9 @@ def process_stripe_webhook_task(self, customer_id: UUID, payload_dict: dict):
             customer_id,
         )
 
-        db_event = WebhookEvent(
-            customer_id=customer_id, source="stripe", payload=payload.model_dump()
+        db_event = WebhookEventRepository().create(
+            db, customer_id=customer_id, source="stripe", payload=payload.model_dump()
         )
-        db.add(db_event)
-        db.commit()
-        db.refresh(db_event)
         logger.info(
             "Saved webhook event %s for customer %s to database.",
             db_event.id,
