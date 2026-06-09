@@ -10,11 +10,11 @@ import stripe
 from fastapi import HTTPException, Request, status
 from slowapi import Limiter
 from slowapi.util import get_remote_address
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 
 from .models.customer import Customer
+from .repositories.customer_repository import CustomerRepository
 
 logger = logging.getLogger(__name__)
 
@@ -141,7 +141,7 @@ class WebhookVerifier:
         return customer
 
     def _get_customer(self, db: Session, tenant_id: str) -> Customer | None:
-        customer = db.query(Customer).filter(Customer.tenant_id == tenant_id).first()
+        customer = CustomerRepository.get_by_tenant_id(db, tenant_id)
         if customer and not customer.is_active:
             raise HTTPException(status_code=403, detail="Tenant is inactive.")
         return customer
@@ -149,10 +149,7 @@ class WebhookVerifier:
     async def _get_customer_async(
         self, db: AsyncSession, tenant_id: str
     ) -> Customer | None:
-        result = await db.execute(
-            select(Customer).where(Customer.tenant_id == tenant_id)
-        )
-        customer = result.scalar_one_or_none()
+        customer = await CustomerRepository.get_by_tenant_id_async(db, tenant_id)
         if customer and not customer.is_active:
             raise HTTPException(status_code=403, detail="Tenant is inactive.")
         return customer
