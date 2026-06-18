@@ -84,12 +84,18 @@ app.add_middleware(SessionMiddleware, secret_key=settings.session_secret)
 @app.middleware("http")
 async def security_headers(request: Request, call_next):
     response = await call_next(request)
-    response.headers["X-Content-Type-Options"] = "nosniff"
-    response.headers["X-Frame-Options"] = "DENY"
-    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-    response.headers["Strict-Transport-Security"] = (
-        "max-age=63072000; includeSubDomains"
-    )
+    # setdefault — 엔드포인트가 의도적으로 설정한 헤더는 덮어쓰지 않음
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "DENY")
+    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    # HSTS는 보안 연결(또는 프록시 뒤 HTTPS)에서만 — RFC 6797 §7.2
+    if (
+        request.url.scheme == "https"
+        or request.headers.get("x-forwarded-proto") == "https"
+    ):
+        response.headers.setdefault(
+            "Strict-Transport-Security", "max-age=63072000; includeSubDomains"
+        )
     return response
 
 
