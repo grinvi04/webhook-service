@@ -64,7 +64,7 @@ async def receive_webhook(..., db: AsyncSession = Depends(get_async_db)):
     await db.execute(...)
 ```
 
-`get_db`가 `database.py`와 `dependencies.py`에 중복 정의되어 있음. **`database.get_db`만 사용** (중복 제거 필요).
+`get_db`는 `app/database.py`에만 정의되어 있다 — `database.get_db`를 사용한다.
 
 ### SessionMiddleware 등록 확인
 
@@ -93,7 +93,7 @@ SessionMiddleware 없이 `request.session` 접근 시 런타임 에러.
 
 ```
 app/metrics.py          ← Prometheus Counter·Histogram 정의 (유일한 위치)
-app/dependencies.py     ← get_db, get_current_user, WebhookVerifier, limiter
+app/dependencies.py     ← get_current_user, WebhookVerifier, limiter
 app/webhook_registry.py ← WEBHOOK_REGISTRY: source → Celery Task 매핑
 app/services/webhook_handler.py ← Celery 태스크 구현
 ```
@@ -138,7 +138,8 @@ def on_failure(self, exc, task_id, args, kwargs, einfo):
 
 ```python
 # ✅ 올바른 방법
-from app.dependencies import get_current_user, get_db
+from app.database import get_db
+from app.dependencies import get_current_user
 app.dependency_overrides[get_db] = lambda: mock_db
 app.dependency_overrides[get_current_user] = lambda: mock_user
 # 테스트 후 반드시
