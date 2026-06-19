@@ -89,10 +89,11 @@ async def security_headers(request: Request, call_next):
     response.headers.setdefault("X-Frame-Options", "DENY")
     response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
     # HSTS는 보안 연결(또는 프록시 뒤 HTTPS)에서만 — RFC 6797 §7.2
-    if (
-        request.url.scheme == "https"
-        or request.headers.get("x-forwarded-proto") == "https"
-    ):
+    # X-Forwarded-Proto: 대소문자·멀티 프록시(쉼표 구분, 첫 값=클라이언트측) 대응
+    forwarded_proto = (
+        request.headers.get("x-forwarded-proto", "").split(",")[0].strip().lower()
+    )
+    if request.url.scheme == "https" or forwarded_proto == "https":
         response.headers.setdefault(
             "Strict-Transport-Security", "max-age=63072000; includeSubDomains"
         )
