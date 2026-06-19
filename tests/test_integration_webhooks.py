@@ -79,9 +79,10 @@ def test_security_headers_present(client):
     assert res_http.headers["X-Frame-Options"] == "DENY"
     assert res_http.headers["Referrer-Policy"] == "strict-origin-when-cross-origin"
     assert "Strict-Transport-Security" not in res_http.headers
-    # HTTPS(프록시 X-Forwarded-Proto): HSTS 추가
-    res_https = test_client.get("/", headers={"X-Forwarded-Proto": "https"})
-    assert "max-age=" in res_https.headers["Strict-Transport-Security"]
+    # HTTPS(프록시 X-Forwarded-Proto): 대소문자·멀티 프록시(쉼표) 케이스 포함
+    for proto in ["https", "HTTPS", "https, http"]:
+        res_https = test_client.get("/", headers={"X-Forwarded-Proto": proto})
+        assert "max-age=" in res_https.headers["Strict-Transport-Security"]
 
 
 def test_receive_github_webhook_success(client):
