@@ -70,6 +70,21 @@ def client(mocker, db_session_mock, redis_mock):
     app.main.app.dependency_overrides.clear()
 
 
+def test_security_headers_present(client):
+    """모든 응답에 보안 헤더가 설정되는지 검증 (clickjacking·MIME 스니핑 방어)."""
+    test_client, _, _, _ = client
+    # HTTP: HSTS 제외, 나머지 보안 헤더 존재 (RFC 6797 §7.2)
+    res_http = test_client.get("/")
+    assert res_http.headers["X-Content-Type-Options"] == "nosniff"
+    assert res_http.headers["X-Frame-Options"] == "DENY"
+    assert res_http.headers["Referrer-Policy"] == "strict-origin-when-cross-origin"
+    assert "Strict-Transport-Security" not in res_http.headers
+    # HTTPS(프록시 X-Forwarded-Proto): 대소문자·멀티 프록시(쉼표) 케이스 포함
+    for proto in ["https", "HTTPS", "https, http"]:
+        res_https = test_client.get("/", headers={"X-Forwarded-Proto": proto})
+        assert "max-age=" in res_https.headers["Strict-Transport-Security"]
+
+
 def test_receive_github_webhook_success(client):
     """Tests successful reception and queuing of a GitHub webhook for a tenant."""
     test_client, mock_task, _, _ = client
