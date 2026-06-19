@@ -195,11 +195,14 @@ assert _counter_value(CUSTOMER_WEBHOOK_TOTAL, customer_id="t1", source="github")
 
 ---
 
-## 커밋 전 체크리스트
+## 빌드·테스트 명령
 
+> 백엔드 전용(프론트엔드 없음). 모든 Python 명령에 macOS DYLD prefix 필수.
 pre-commit이 자동 실행하지만 수동 확인:
 ```bash
+# lint·format
 DYLD_LIBRARY_PATH=/opt/homebrew/opt/expat/lib .venv/bin/ruff check app/ tests/
+# 테스트 (= 품질/회귀 검사)
 DYLD_LIBRARY_PATH=/opt/homebrew/opt/expat/lib \
   DATABASE_URL=postgresql+psycopg2://user:password@localhost:5433/webhook_db \
   .venv/bin/pytest tests/ -q
