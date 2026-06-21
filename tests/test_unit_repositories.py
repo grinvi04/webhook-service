@@ -1,30 +1,71 @@
+import uuid
 from unittest.mock import AsyncMock, MagicMock
-from uuid import uuid4
 
 import pytest
+from sqlalchemy import create_engine, event
+from sqlalchemy.orm import sessionmaker
 
-from app.models.webhook_event import WebhookEvent
+from app.database import Base
+from app.models.customer import Customer  # noqa: F401 — Base 등록 필수
+from app.models.webhook_event import WebhookEvent  # noqa: F401
 from app.repositories.customer_repository import CustomerRepository
 from app.repositories.webhook_event_repository import WebhookEventRepository
 
 
-def test_customer_repo_get_by_tenant_id():
-    db = MagicMock()
-    sentinel = object()
-    db.query.return_value.filter.return_value.first.return_value = sentinel
+@pytest.fixture
+def db():
+    engine = create_engine("sqlite:///:memory:")
+
+    @event.listens_for(engine, "connect")
+    def enable_fk(dbapi_conn, _):
+        dbapi_conn.execute("PRAGMA foreign_keys=ON")
+
+    Base.metadata.create_all(engine)
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    yield session
+    session.close()
+    Base.metadata.drop_all(engine)
+    engine.dispose()
+
+
+def _make_customer(session: object, tenant_id: str = "tenant-1") -> Customer:
+    customer = Customer(
+        id=uuid.uuid4(),
+        tenant_id=tenant_id,
+        name="Test",
+        webhook_secret="secret",
+        allowed_event_types=[],
+    )
+    session.add(customer)
+    session.flush()
+    return customer
+
+
+# ─── CustomerRepository ──────────────────────────────────────────────────────
+
+
+def test_customer_repo_get_by_tenant_id(db):
+    _make_customer(db, "tenant-1")
 
     result = CustomerRepository.get_by_tenant_id(db, "tenant-1")
 
-    assert result is sentinel
-    db.query.return_value.filter.return_value.first.assert_called_once()
+    assert result is not None
+    assert result.tenant_id == "tenant-1"
+
+
+def test_customer_repo_get_by_tenant_id_not_found(db):
+    result = CustomerRepository.get_by_tenant_id(db, "nonexistent")
+
+    assert result is None
 
 
 @pytest.mark.asyncio
 async def test_customer_repo_get_by_tenant_id_async():
-    db = MagicMock()
     sentinel = object()
     exec_result = MagicMock()
     exec_result.scalar_one_or_none.return_value = sentinel
+    db = MagicMock()
     db.execute = AsyncMock(return_value=exec_result)
 
     result = await CustomerRepository.get_by_tenant_id_async(db, "tenant-1")
@@ -33,36 +74,78 @@ async def test_customer_repo_get_by_tenant_id_async():
     db.execute.assert_awaited_once()
 
 
-def test_webhook_event_repo_create_persists_and_returns_event():
-    db = MagicMock()
-    customer_id = uuid4()
+# ─── WebhookEventRepository ──────────────────────────────────────────────────
+
+
+def test_webhook_event_repo_create_returns_event_pending(db):
+    customer = _make_customer(db)
     payload = {"action": "starred"}
 
-    event = WebhookEventRepository.create(
-        db, customer_id=customer_id, source="github", payload=payload
+    result = WebhookEventRepository.create(
+        db, customer_id=customer.id, source="github", payload=payload
     )
 
-    db.add.assert_called_once()
-    added = db.add.call_args[0][0]
-    assert isinstance(added, WebhookEvent)
-    assert added.customer_id == customer_id
-    assert added.source == "github"
-    assert added.payload == payload
-    # 트랜잭션 경계는 호출부 책임 — create는 add만 수행
-    db.commit.assert_not_called()
-    db.refresh.assert_not_called()
-    assert event is added
+    assert isinstance(result, WebhookEvent)
+    assert result.customer_id == customer.id
+    assert result.source == "github"
+    assert result.payload == payload
+    # create는 add만 수행 — flush 전이므로 id 미할당(pending)
+    assert result in db.new
 
 
-def test_webhook_event_repo_get_for_customer_filters():
-    db = MagicMock()
-    sentinel = object()
-    db.query.return_value.filter.return_value.first.return_value = sentinel
-    customer_id = uuid4()
+def test_webhook_event_repo_create_does_not_auto_commit(db):
+    from sqlalchemy import text
+
+    customer = _make_customer(db)
+
+    WebhookEventRepository.create(
+        db, customer_id=customer.id, source="github", payload={}
+    )
+    db.rollback()
+
+    remaining = db.execute(text("SELECT COUNT(*) FROM webhook_events")).scalar()
+    assert remaining == 0
+
+
+def test_webhook_event_repo_get_for_customer_found(db):
+    customer = _make_customer(db)
+    evt = WebhookEventRepository.create(
+        db, customer_id=customer.id, source="github", payload={}
+    )
+    db.flush()
 
     result = WebhookEventRepository.get_for_customer(
-        db, event_id=7, customer_id=customer_id
+        db, event_id=evt.id, customer_id=customer.id
     )
 
-    assert result is sentinel
-    db.query.return_value.filter.return_value.first.assert_called_once()
+    assert result is not None
+    assert result.id == evt.id
+    assert result.source == "github"
+
+
+def test_webhook_event_repo_get_for_customer_wrong_customer(db):
+    customer = _make_customer(db)
+    evt = WebhookEventRepository.create(
+        db, customer_id=customer.id, source="github", payload={}
+    )
+    db.flush()
+
+    result = WebhookEventRepository.get_for_customer(
+        db, event_id=evt.id, customer_id=uuid.uuid4()
+    )
+
+    assert result is None
+
+
+def test_webhook_event_repo_get_for_customer_wrong_event_id(db):
+    customer = _make_customer(db)
+    WebhookEventRepository.create(
+        db, customer_id=customer.id, source="github", payload={}
+    )
+    db.flush()
+
+    result = WebhookEventRepository.get_for_customer(
+        db, event_id=99999, customer_id=customer.id
+    )
+
+    assert result is None

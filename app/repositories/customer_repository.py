@@ -14,7 +14,9 @@ class CustomerRepository:
 
     @classmethod
     def get_by_tenant_id(cls, db: Session, tenant_id: str) -> Customer | None:
-        return db.query(Customer).filter(Customer.tenant_id == tenant_id).first()
+        return db.execute(
+            select(Customer).where(Customer.tenant_id == tenant_id)
+        ).scalar_one_or_none()
 
     @classmethod
     async def get_by_tenant_id_async(

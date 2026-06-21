@@ -1,5 +1,6 @@
 from uuid import UUID
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..models.webhook_event import WebhookEvent
@@ -24,11 +25,9 @@ class WebhookEventRepository:
     def get_for_customer(
         cls, db: Session, *, event_id: int, customer_id: UUID
     ) -> WebhookEvent | None:
-        return (
-            db.query(WebhookEvent)
-            .filter(
+        return db.execute(
+            select(WebhookEvent).where(
                 WebhookEvent.id == event_id,
                 WebhookEvent.customer_id == customer_id,
             )
-            .first()
-        )
+        ).scalar_one_or_none()
