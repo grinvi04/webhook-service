@@ -259,9 +259,9 @@ def test_replay_event_success(client, db_session_mock, mocker):
     mock_event.customer_id = mock_customer_id
     mock_event.source = "github"
     mock_event.payload = mock_payload
-    db_session_mock.query.return_value.filter.return_value.first.return_value = (
-        mock_event
-    )
+    exec_result = MagicMock()
+    exec_result.scalar_one_or_none.return_value = mock_event
+    db_session_mock.execute.return_value = exec_result
 
     response = test_client.post(f"/webhooks/{tenant_id}/events/{event_id}/replay")
 
@@ -329,7 +329,9 @@ def test_replay_event_event_not_found_for_tenant(client, db_session_mock, mocker
     mock_customer.id = mock_customer_id
     mock_customer.is_active = True
     mocker.patch("app.main.WebhookVerifier._get_customer", return_value=mock_customer)
-    db_session_mock.query.return_value.filter.return_value.first.return_value = None
+    exec_result = MagicMock()
+    exec_result.scalar_one_or_none.return_value = None
+    db_session_mock.execute.return_value = exec_result
 
     response = test_client.post(f"/webhooks/{tenant_id}/events/{event_id}/replay")
 
@@ -385,8 +387,10 @@ def test_replay_event_data_isolation(client, db_session_mock, mocker):
     mock_customer_a.is_active = True
     mocker.patch("app.main.WebhookVerifier._get_customer", return_value=mock_customer_a)
 
-    # Event belongs to a different customer — query returns None
-    db_session_mock.query.return_value.filter.return_value.first.return_value = None
+    # Event belongs to a different customer — returns None (data isolation)
+    exec_result = MagicMock()
+    exec_result.scalar_one_or_none.return_value = None
+    db_session_mock.execute.return_value = exec_result
 
     response = test_client.post(f"/webhooks/{tenant_id}/events/{event_id}/replay")
 
