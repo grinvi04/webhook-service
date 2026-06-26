@@ -213,3 +213,9 @@ DYLD_LIBRARY_PATH=/opt/homebrew/opt/expat/lib \
 ## 문서 관리
 
 > **생성 문서는 repo에 커밋한다.** AI 도구가 만든 계획·설계 문서(`/plan` 스펙, `/milestone` 추적, 설계 결정 기록 등)는 도구 로컬 디렉터리(예: `~/.claude/plans`)에 두지 말고 프로젝트 `docs/` 아래에 커밋해 관리한다. 로컬 캐시는 노트북·도구·세션이 바뀌면 유실된다 — repo에 있어야 누가·어디서 이어받아도 일관되게 작업할 수 있다. (공통 규칙 단일 출처: team-harness `ai-collaboration.md`.)
+
+## 배포·헬스체크
+
+- ⚠️ **2026-06 현재 운영 미배포** (Railway 프로젝트 미생성). 배포 시 이 섹션에 실제 도메인·헬스 엔드포인트를 기입한다(플레이스홀더 금지 — team-harness `operations.md` §6).
+- 헬스 엔드포인트(코드): FastAPI `GET /` / `/docs`. 배포 후 `curl -sf https://<host>/` (200).
+- 배포 검증: team-harness `operations.md` §6 표준(CLI로 배포 신선도까지, liveness ≠ freshness).
