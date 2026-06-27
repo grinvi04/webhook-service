@@ -5,7 +5,7 @@
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.117-green.svg)
 ![License](https://img.shields.io/github/license/grinvi04/webhook-service)
 ![Tests](https://img.shields.io/badge/tests-23%20passed-brightgreen)
-![Version](https://img.shields.io/badge/version-1.3.0-blue)
+![Version](https://img.shields.io/badge/version-1.3.1-blue)
 
 > **"위변조 차단·비동기 큐·자동 재시도를 갖춘 프로덕션 수준의 웹훅 수신 서비스."**
 
