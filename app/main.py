@@ -5,12 +5,15 @@ from typing import Any
 
 import redis.asyncio as aioredis
 from fastapi import Depends, FastAPI, HTTPException, Request, status
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from prometheus_fastapi_instrumentator import Instrumentator
 from slowapi.middleware import SlowAPIMiddleware
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.sessions import SessionMiddleware
 
 from keycloak import KeycloakOpenID  # type: ignore[attr-defined]
@@ -98,10 +101,39 @@ async def security_headers(request: Request, call_next):
     return response
 
 
+def _error_envelope(status_code: int, message: Any, details: Any = None) -> dict[str, Any]:
+    """공통 응답 Envelope(에러) — {success, data, error}."""
+    error: dict[str, Any] = {"code": status_code, "message": message}
+    if details is not None:
+        error["details"] = details
+    return {"success": False, "data": None, "error": error}
+
+
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request: Request, exc: StarletteHTTPException) -> JSONResponse:
+    # HTTPException 계열을 공통 Envelope로 매핑 (헤더는 보존)
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=_error_envelope(exc.status_code, exc.detail),
+        headers=getattr(exc, "headers", None),
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(
+    request: Request, exc: RequestValidationError
+) -> JSONResponse:
+    # 입력 오류는 4xx(422) 유지 — 5xx로 흡수하지 않음
+    return JSONResponse(
+        status_code=422,
+        content=_error_envelope(422, "Request validation failed", jsonable_encoder(exc.errors())),
+    )
+
+
 @app.exception_handler(Exception)
-async def unhandled_exception_handler(request: Request, exc: Exception):
+async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     logger.error("Unhandled exception: %s", exc, exc_info=True)
-    return JSONResponse(status_code=500, content={"detail": "Internal Server Error"})
+    return JSONResponse(status_code=500, content=_error_envelope(500, "Internal Server Error"))
 
 
 @app.get("/", tags=["Root"])
@@ -168,9 +200,13 @@ async def receive_webhook(
             raise HTTPException(status_code=404, detail=f"Source '{source}' not supported.")
 
         # Idempotency check — 중복 웹훅 방지 (Stripe/GitHub 재시도 대응)
+        # 멱등키는 NX로 예약(reserve)하되, 큐잉 실패 시 해제해 공급자 재시도가
+        # "already processed"로 조용히 드롭되는 유실 창을 없앤다.
+        # 키에 tenant_id를 포함해 테넌트 간 충돌 가능성을 제거(L4).
         event_id = _extract_event_id(source, request, payload)
+        idempotency_key: str | None = None
         if event_id:
-            idempotency_key = f"webhook:idempotency:{source}:{event_id}"
+            idempotency_key = f"webhook:idempotency:{tenant_id}:{source}:{event_id}"
             if not await redis_client.set(idempotency_key, "1", ex=86400, nx=True):
                 logger.info("Duplicate %s webhook ignored: %s", source, event_id)
                 return {"message": "Webhook already processed."}
@@ -181,14 +217,20 @@ async def receive_webhook(
         logger.info(f"Received {source} webhook for tenant {tenant_id}. Queuing for processing.")
         task = get_task(source)
 
-        # Route tasks to different queues based on source or customer priority
-        if source == "github":  # Example of routing
-            task.apply_async(
-                args=[customer.id, payload],
-                queue="high_priority",
-            )
-        else:
-            task.apply_async(args=[customer.id, payload], queue="default")
+        try:
+            # Route tasks to different queues based on source or customer priority
+            if source == "github":  # Example of routing
+                task.apply_async(
+                    args=[customer.id, payload, event_id],
+                    queue="high_priority",
+                )
+            else:
+                task.apply_async(args=[customer.id, payload, event_id], queue="default")
+        except Exception:
+            # 큐잉 실패 — 예약한 멱등키를 해제해 공급자 재시도가 드롭되지 않게 함
+            if idempotency_key:
+                await redis_client.delete(idempotency_key)
+            raise
 
         return {"message": "Webhook received and queued for processing."}
     except HTTPException as e:
