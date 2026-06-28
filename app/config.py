@@ -6,8 +6,6 @@ class Settings(BaseSettings):
     celery_broker_url: str
     celery_result_backend: str
     redis_url: str = "redis://localhost:6379/0"
-    github_webhook_secret: str
-    stripe_webhook_secret: str
 
     postgres_db: str | None = None
     postgres_user: str | None = None
