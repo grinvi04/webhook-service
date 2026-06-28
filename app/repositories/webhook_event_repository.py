@@ -15,9 +15,20 @@ class WebhookEventRepository:
 
     @classmethod
     def create(
-        cls, db: Session, *, customer_id: UUID, source: str, payload: dict
+        cls,
+        db: Session,
+        *,
+        customer_id: UUID,
+        source: str,
+        payload: dict,
+        event_id: str | None = None,
     ) -> WebhookEvent:
-        event = WebhookEvent(customer_id=customer_id, source=source, payload=payload)
+        event = WebhookEvent(
+            customer_id=customer_id,
+            source=source,
+            payload=payload,
+            event_id=event_id,
+        )
         db.add(event)
         return event
 
