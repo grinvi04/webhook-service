@@ -1,5 +1,4 @@
 import logging
-from uuid import UUID
 
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
@@ -42,7 +41,7 @@ def _handle_task_failure(task, exc, task_id, args, kwargs, einfo):
     on_failure=_handle_task_failure,
     acks_late=True,
 )
-def process_github_webhook_task(self, customer_id: UUID, payload_dict: dict):
+def process_github_webhook_task(self, customer_id: str, payload_dict: dict) -> None:
     db: Session = SessionLocal()
     try:
         payload = GitHubWebhookPayload.model_validate(payload_dict)
@@ -85,7 +84,7 @@ def process_github_webhook_task(self, customer_id: UUID, payload_dict: dict):
     on_failure=_handle_task_failure,
     acks_late=True,
 )
-def process_stripe_webhook_task(self, customer_id: UUID, payload_dict: dict):
+def process_stripe_webhook_task(self, customer_id: str, payload_dict: dict) -> None:
     db: Session = SessionLocal()
     try:
         payload = StripeWebhookPayload.model_validate(payload_dict)

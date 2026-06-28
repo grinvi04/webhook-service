@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 from starlette.middleware.sessions import SessionMiddleware
 
-from keycloak import KeycloakOpenID
+from keycloak import KeycloakOpenID  # type: ignore[attr-defined]
 
 from . import admin, database, webhooks  # noqa: F401
 from .config import settings
@@ -90,9 +90,7 @@ async def security_headers(request: Request, call_next):
     response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
     # HSTS는 보안 연결(또는 프록시 뒤 HTTPS)에서만 — RFC 6797 §7.2
     # X-Forwarded-Proto: 대소문자·멀티 프록시(쉼표 구분, 첫 값=클라이언트측) 대응
-    forwarded_proto = (
-        request.headers.get("x-forwarded-proto", "").split(",")[0].strip().lower()
-    )
+    forwarded_proto = request.headers.get("x-forwarded-proto", "").split(",")[0].strip().lower()
     if request.url.scheme == "https" or forwarded_proto == "https":
         response.headers.setdefault(
             "Strict-Transport-Security", "max-age=63072000; includeSubDomains"
@@ -116,19 +114,18 @@ async def read_root():
 
 
 @app.get("/health", tags=["Health"])
-async def health_check():
+async def health_check(db: AsyncSession = Depends(database.get_async_db)) -> dict:
     """
     Health check endpoint to verify service status.
     """
     try:
-        # Check DB connection
-        with database.SessionLocal() as db:
-            db.execute(text("SELECT 1"))
+        # 비동기 세션으로 DB 연결 확인 — 이벤트 루프를 블로킹하지 않음
+        await db.execute(text("SELECT 1"))
         logger.info("Health check successful.")
         return {"status": "ok"}
     except Exception as e:
         logger.error("Health check failed: %s", e)
-        raise HTTPException(status_code=503, detail="Service Unavailable")
+        raise HTTPException(status_code=503, detail="Service Unavailable") from e
 
 
 # --- Webhook Endpoints --- #
@@ -168,9 +165,7 @@ async def receive_webhook(
         elif source == "stripe":
             customer = await verify_stripe(request, tenant_id, db)
         else:
-            raise HTTPException(
-                status_code=404, detail=f"Source '{source}' not supported."
-            )
+            raise HTTPException(status_code=404, detail=f"Source '{source}' not supported.")
 
         # Idempotency check — 중복 웹훅 방지 (Stripe/GitHub 재시도 대응)
         event_id = _extract_event_id(source, request, payload)
@@ -183,9 +178,7 @@ async def receive_webhook(
         # Increment webhook total counter
         CUSTOMER_WEBHOOK_TOTAL.labels(customer_id=str(customer.id), source=source).inc()
 
-        logger.info(
-            f"Received {source} webhook for tenant {tenant_id}. Queuing for processing."
-        )
+        logger.info(f"Received {source} webhook for tenant {tenant_id}. Queuing for processing.")
         task = get_task(source)
 
         # Route tasks to different queues based on source or customer priority
@@ -209,12 +202,12 @@ async def receive_webhook(
             source=source,
             error_type=str(type(e).__name__),
         ).inc()
-        raise HTTPException(status_code=500, detail="Internal Server Error")
+        raise HTTPException(status_code=500, detail="Internal Server Error") from e
     finally:
         processing_time = time.time() - start_time
-        WEBHOOK_PROCESSING_DURATION.labels(
-            customer_id=tenant_id, source=source
-        ).observe(processing_time)
+        WEBHOOK_PROCESSING_DURATION.labels(customer_id=tenant_id, source=source).observe(
+            processing_time
+        )
 
 
 @app.post(
@@ -222,7 +215,7 @@ async def receive_webhook(
     tags=["Events"],
     status_code=status.HTTP_202_ACCEPTED,
 )
-@limiter.limit("5/minute", key_func=get_tenant_id_from_path)
+@limiter.limit("5/minute", key_func=get_tenant_id_from_path)  # type: ignore[arg-type]
 def replay_event(
     tenant_id: str,
     event_id: int,
@@ -254,7 +247,9 @@ def replay_event(
 
     # Filter by both event_id and customer_id to ensure data isolation
     db_event = WebhookEventRepository.get_for_customer(
-        db, event_id=event_id, customer_id=customer.id
+        db,
+        event_id=event_id,
+        customer_id=customer.id,  # type: ignore[arg-type]  # 레거시 Column 타입
     )
 
     if not db_event:
@@ -265,17 +260,15 @@ def replay_event(
         )
 
     try:
-        task = get_task(db_event.source)
+        task = get_task(db_event.source)  # type: ignore[arg-type]  # 레거시 Column 타입
         # Pass customer_id to the task for replay
         task.delay(db_event.customer_id, db_event.payload)
-    except NotImplementedError:
+    except NotImplementedError as e:
         logger.error("Replay not implemented for source: %s", db_event.source)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Replay not implemented for source '{db_event.source}'",
-        )
+        ) from e
 
-    logger.info(
-        "Successfully re-queued event_id: %s for tenant %s.", event_id, tenant_id
-    )
+    logger.info("Successfully re-queued event_id: %s for tenant %s.", event_id, tenant_id)
     return {"message": f"Event {event_id} has been re-queued for processing."}

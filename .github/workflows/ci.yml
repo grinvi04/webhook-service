@@ -57,6 +57,9 @@ jobs:
           ruff check .
           ruff format --check .
 
+      - name: Type Check (mypy)
+        run: mypy
+
       - name: Run tests with pytest
         env:
           DATABASE_URL: postgresql+psycopg2://postgres:postgres@localhost:5432/test_db

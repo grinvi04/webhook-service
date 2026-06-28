@@ -25,9 +25,7 @@ def test_process_github_webhook_task_success():
         "repository": {"full_name": "test/repo"},
     }
 
-    with patch(
-        "app.services.webhook_handler.SessionLocal", return_value=mock_db_session
-    ):
+    with patch("app.services.webhook_handler.SessionLocal", return_value=mock_db_session):
         process_github_webhook_task.run(customer_id, payload)
 
     mock_db_session.add.assert_called_once()
@@ -55,16 +53,14 @@ def test_process_github_webhook_task_failure_metrics():
     )
 
     with (
-        patch(
-            "app.services.webhook_handler.SessionLocal", return_value=mock_db_session
-        ),
+        patch("app.services.webhook_handler.SessionLocal", return_value=mock_db_session),
         patch(
             "app.services.webhook_handler.GitHubWebhookPayload.model_validate",
             side_effect=ValueError("Validation Error"),
         ),
+        pytest.raises(ValueError),
     ):
-        with pytest.raises(ValueError):
-            process_github_webhook_task.run(customer_id, payload)
+        process_github_webhook_task.run(customer_id, payload)
 
     assert (
         _counter_value(

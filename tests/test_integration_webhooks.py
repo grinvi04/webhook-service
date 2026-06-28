@@ -41,9 +41,7 @@ def redis_mock():
 def client(mocker, db_session_mock, redis_mock):
     app.main.app.dependency_overrides[get_redis] = lambda: redis_mock
     app.main.app.dependency_overrides[app.database.get_db] = lambda: db_session_mock
-    app.main.app.dependency_overrides[app.database.get_async_db] = lambda: (
-        db_session_mock
-    )
+    app.main.app.dependency_overrides[app.database.get_async_db] = lambda: db_session_mock
 
     mock_task = MagicMock()
     mocker.patch("app.main.get_task", return_value=mock_task)
@@ -100,9 +98,7 @@ def test_receive_github_webhook_success(client):
     assert response.status_code == 202
     assert response.json() == {"message": "Webhook received and queued for processing."}
     assert (
-        _counter_value(
-            CUSTOMER_WEBHOOK_TOTAL, customer_id="mock_customer_id", source="github"
-        )
+        _counter_value(CUSTOMER_WEBHOOK_TOTAL, customer_id="mock_customer_id", source="github")
         == initial_webhook_total + 1
     )
 
@@ -113,26 +109,19 @@ def test_receive_github_webhook_invalid_signature(client):
     tenant_id = "some-tenant"
     payload = {"action": "opened"}
 
-    mock_verify_github.side_effect = HTTPException(
-        status_code=401, detail="Invalid signature"
-    )
+    mock_verify_github.side_effect = HTTPException(status_code=401, detail="Invalid signature")
 
     error_labels = {
         "customer_id": tenant_id,
         "source": "github",
         "error_type": "Invalid signature",
     }
-    initial_error_total = (
-        REGISTRY.get_sample_value(_ERRORS_METRIC, labels=error_labels) or 0
-    )
+    initial_error_total = REGISTRY.get_sample_value(_ERRORS_METRIC, labels=error_labels) or 0
 
     response = test_client.post(f"/webhooks/{tenant_id}/github", json=payload)
 
     assert response.status_code == 401
-    assert (
-        REGISTRY.get_sample_value(_ERRORS_METRIC, labels=error_labels)
-        == initial_error_total + 1
-    )
+    assert REGISTRY.get_sample_value(_ERRORS_METRIC, labels=error_labels) == initial_error_total + 1
 
 
 def test_receive_webhook_tenant_not_found(client):
@@ -141,26 +130,19 @@ def test_receive_webhook_tenant_not_found(client):
     tenant_id = "non-existent-tenant"
     payload = {"action": "opened"}
 
-    mock_verify_github.side_effect = HTTPException(
-        status_code=404, detail="Tenant not found"
-    )
+    mock_verify_github.side_effect = HTTPException(status_code=404, detail="Tenant not found")
 
     error_labels = {
         "customer_id": tenant_id,
         "source": "github",
         "error_type": "Tenant not found",
     }
-    initial_error_total = (
-        REGISTRY.get_sample_value(_ERRORS_METRIC, labels=error_labels) or 0
-    )
+    initial_error_total = REGISTRY.get_sample_value(_ERRORS_METRIC, labels=error_labels) or 0
 
     response = test_client.post(f"/webhooks/{tenant_id}/github", json=payload)
 
     assert response.status_code == 404
-    assert (
-        REGISTRY.get_sample_value(_ERRORS_METRIC, labels=error_labels)
-        == initial_error_total + 1
-    )
+    assert REGISTRY.get_sample_value(_ERRORS_METRIC, labels=error_labels) == initial_error_total + 1
 
 
 def test_receive_stripe_webhook_success(client):
@@ -178,9 +160,7 @@ def test_receive_stripe_webhook_success(client):
     assert response.status_code == 202
     assert response.json() == {"message": "Webhook received and queued for processing."}
     assert (
-        _counter_value(
-            CUSTOMER_WEBHOOK_TOTAL, customer_id="mock_customer_id", source="stripe"
-        )
+        _counter_value(CUSTOMER_WEBHOOK_TOTAL, customer_id="mock_customer_id", source="stripe")
         == initial_webhook_total + 1
     )
 
@@ -200,17 +180,12 @@ def test_receive_stripe_webhook_invalid_signature(client):
         "source": "stripe",
         "error_type": "Invalid Stripe signature.",
     }
-    initial_error_total = (
-        REGISTRY.get_sample_value(_ERRORS_METRIC, labels=error_labels) or 0
-    )
+    initial_error_total = REGISTRY.get_sample_value(_ERRORS_METRIC, labels=error_labels) or 0
 
     response = test_client.post(f"/webhooks/{tenant_id}/stripe", json=payload)
 
     assert response.status_code == 401
-    assert (
-        REGISTRY.get_sample_value(_ERRORS_METRIC, labels=error_labels)
-        == initial_error_total + 1
-    )
+    assert REGISTRY.get_sample_value(_ERRORS_METRIC, labels=error_labels) == initial_error_total + 1
 
 
 def test_receive_webhook_inactive_tenant(client):
@@ -219,26 +194,19 @@ def test_receive_webhook_inactive_tenant(client):
     tenant_id = "inactive-tenant"
     payload = {"action": "ping"}
 
-    mock_verify_github.side_effect = HTTPException(
-        status_code=403, detail="Tenant is inactive."
-    )
+    mock_verify_github.side_effect = HTTPException(status_code=403, detail="Tenant is inactive.")
 
     error_labels = {
         "customer_id": tenant_id,
         "source": "github",
         "error_type": "Tenant is inactive.",
     }
-    initial_error_total = (
-        REGISTRY.get_sample_value(_ERRORS_METRIC, labels=error_labels) or 0
-    )
+    initial_error_total = REGISTRY.get_sample_value(_ERRORS_METRIC, labels=error_labels) or 0
 
     response = test_client.post(f"/webhooks/{tenant_id}/github", json=payload)
 
     assert response.status_code == 403
-    assert (
-        REGISTRY.get_sample_value(_ERRORS_METRIC, labels=error_labels)
-        == initial_error_total + 1
-    )
+    assert REGISTRY.get_sample_value(_ERRORS_METRIC, labels=error_labels) == initial_error_total + 1
 
 
 def test_replay_event_success(client, db_session_mock, mocker):
@@ -266,9 +234,7 @@ def test_replay_event_success(client, db_session_mock, mocker):
     response = test_client.post(f"/webhooks/{tenant_id}/events/{event_id}/replay")
 
     assert response.status_code == 202
-    assert response.json() == {
-        "message": f"Event {event_id} has been re-queued for processing."
-    }
+    assert response.json() == {"message": f"Event {event_id} has been re-queued for processing."}
     mock_task.delay.assert_called_once_with(mock_customer_id, mock_payload)
 
 

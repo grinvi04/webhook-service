@@ -19,10 +19,6 @@ class CustomerRepository:
         ).scalar_one_or_none()
 
     @classmethod
-    async def get_by_tenant_id_async(
-        cls, db: AsyncSession, tenant_id: str
-    ) -> Customer | None:
-        result = await db.execute(
-            select(Customer).where(Customer.tenant_id == tenant_id)
-        )
+    async def get_by_tenant_id_async(cls, db: AsyncSession, tenant_id: str) -> Customer | None:
+        result = await db.execute(select(Customer).where(Customer.tenant_id == tenant_id))
         return result.scalar_one_or_none()
