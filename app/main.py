@@ -213,9 +213,13 @@ async def receive_webhook(
             )
 
         # Idempotency check — 중복 웹훅 방지 (Stripe/GitHub 재시도 대응)
+        # 멱등키는 NX로 예약(reserve)하되, 큐잉 실패 시 해제해 공급자 재시도가
+        # "already processed"로 조용히 드롭되는 유실 창을 없앤다.
+        # 키에 tenant_id를 포함해 테넌트 간 충돌 가능성을 제거(L4).
         event_id = _extract_event_id(source, request, payload)
+        idempotency_key: str | None = None
         if event_id:
-            idempotency_key = f"webhook:idempotency:{source}:{event_id}"
+            idempotency_key = f"webhook:idempotency:{tenant_id}:{source}:{event_id}"
             if not await redis_client.set(idempotency_key, "1", ex=86400, nx=True):
                 logger.info("Duplicate %s webhook ignored: %s", source, event_id)
                 return {"message": "Webhook already processed."}
@@ -228,14 +232,20 @@ async def receive_webhook(
         )
         task = get_task(source)
 
-        # Route tasks to different queues based on source or customer priority
-        if source == "github":  # Example of routing
-            task.apply_async(
-                args=[customer.id, payload],
-                queue="high_priority",
-            )
-        else:
-            task.apply_async(args=[customer.id, payload], queue="default")
+        try:
+            # Route tasks to different queues based on source or customer priority
+            if source == "github":  # Example of routing
+                task.apply_async(
+                    args=[customer.id, payload, event_id],
+                    queue="high_priority",
+                )
+            else:
+                task.apply_async(args=[customer.id, payload, event_id], queue="default")
+        except Exception:
+            # 큐잉 실패 — 예약한 멱등키를 해제해 공급자 재시도가 드롭되지 않게 함
+            if idempotency_key:
+                await redis_client.delete(idempotency_key)
+            raise
 
         return {"message": "Webhook received and queued for processing."}
     except HTTPException as e:
