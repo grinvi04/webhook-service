@@ -5,12 +5,15 @@ from typing import Any
 
 import redis.asyncio as aioredis
 from fastapi import Depends, FastAPI, HTTPException, Request, status
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from prometheus_fastapi_instrumentator import Instrumentator
 from slowapi.middleware import SlowAPIMiddleware
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.sessions import SessionMiddleware
 
 from keycloak import KeycloakOpenID
@@ -100,10 +103,47 @@ async def security_headers(request: Request, call_next):
     return response
 
 
+def _error_envelope(
+    status_code: int, message: Any, details: Any = None
+) -> dict[str, Any]:
+    """공통 응답 Envelope(에러) — {success, data, error}."""
+    error: dict[str, Any] = {"code": status_code, "message": message}
+    if details is not None:
+        error["details"] = details
+    return {"success": False, "data": None, "error": error}
+
+
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(
+    request: Request, exc: StarletteHTTPException
+) -> JSONResponse:
+    # HTTPException 계열을 공통 Envelope로 매핑 (헤더는 보존)
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=_error_envelope(exc.status_code, exc.detail),
+        headers=getattr(exc, "headers", None),
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(
+    request: Request, exc: RequestValidationError
+) -> JSONResponse:
+    # 입력 오류는 4xx(422) 유지 — 5xx로 흡수하지 않음
+    return JSONResponse(
+        status_code=422,
+        content=_error_envelope(
+            422, "Request validation failed", jsonable_encoder(exc.errors())
+        ),
+    )
+
+
 @app.exception_handler(Exception)
-async def unhandled_exception_handler(request: Request, exc: Exception):
+async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     logger.error("Unhandled exception: %s", exc, exc_info=True)
-    return JSONResponse(status_code=500, content={"detail": "Internal Server Error"})
+    return JSONResponse(
+        status_code=500, content=_error_envelope(500, "Internal Server Error")
+    )
 
 
 @app.get("/", tags=["Root"])
