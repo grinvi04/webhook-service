@@ -1,5 +1,4 @@
 import logging
-from uuid import UUID
 
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
@@ -43,8 +42,8 @@ def _handle_task_failure(task, exc, task_id, args, kwargs, einfo):
     acks_late=True,
 )
 def process_github_webhook_task(
-    self, customer_id: UUID, payload_dict: dict, event_id: str | None = None
-):
+    self, customer_id: str, payload_dict: dict, event_id: str | None = None
+) -> None:
     db: Session = SessionLocal()
     try:
         payload = GitHubWebhookPayload.model_validate(payload_dict)
@@ -77,8 +76,7 @@ def process_github_webhook_task(
         # 재시도/DLQ 대상이 아니라 정상 중복으로 간주하고 조용히 종료.
         db.rollback()
         logger.info(
-            "Duplicate github event ignored (unique constraint): "
-            "customer=%s event_id=%s",
+            "Duplicate github event ignored (unique constraint): customer=%s event_id=%s",
             customer_id,
             event_id,
         )
@@ -102,8 +100,8 @@ def process_github_webhook_task(
     acks_late=True,
 )
 def process_stripe_webhook_task(
-    self, customer_id: UUID, payload_dict: dict, event_id: str | None = None
-):
+    self, customer_id: str, payload_dict: dict, event_id: str | None = None
+) -> None:
     db: Session = SessionLocal()
     try:
         payload = StripeWebhookPayload.model_validate(payload_dict)
@@ -132,8 +130,7 @@ def process_stripe_webhook_task(
         # 멱등 고유제약 위반 — 동일 (customer, source, event_id) 이미 적재됨.
         db.rollback()
         logger.info(
-            "Duplicate stripe event ignored (unique constraint): "
-            "customer=%s event_id=%s",
+            "Duplicate stripe event ignored (unique constraint): customer=%s event_id=%s",
             customer_id,
             event_id,
         )

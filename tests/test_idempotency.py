@@ -60,9 +60,7 @@ def queue_failure_client(mocker):
     redis_mock.delete = AsyncMock(return_value=1)
 
     app.main.app.dependency_overrides[get_redis] = lambda: redis_mock
-    app.main.app.dependency_overrides[app.database.get_async_db] = lambda: _FakeAsyncDB(
-        customer
-    )
+    app.main.app.dependency_overrides[app.database.get_async_db] = lambda: _FakeAsyncDB(customer)
 
     # 큐잉 실패 시뮬레이션 — apply_async가 예외 발생
     failing_task = MagicMock()
@@ -158,9 +156,7 @@ def test_null_event_id_does_not_conflict(db):
     )
     db.commit()
 
-    count = (
-        db.query(WebhookEvent).filter(WebhookEvent.customer_id == customer.id).count()
-    )
+    count = db.query(WebhookEvent).filter(WebhookEvent.customer_id == customer.id).count()
     assert count == 2
 
 

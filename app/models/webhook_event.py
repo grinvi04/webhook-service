@@ -29,9 +29,7 @@ class WebhookEvent(Base):
     )
 
     id = Column(Integer, primary_key=True, index=True)
-    customer_id = Column(
-        UUID(as_uuid=True), ForeignKey("customers.id"), nullable=False, index=True
-    )
+    customer_id = Column(UUID(as_uuid=True), ForeignKey("customers.id"), nullable=False, index=True)
     source = Column(String, index=True)
     event_id = Column(String, index=True, nullable=True)
     payload = Column(JSON)

@@ -18,7 +18,7 @@ class WebhookEventRepository:
         cls,
         db: Session,
         *,
-        customer_id: UUID,
+        customer_id: UUID | str,
         source: str,
         payload: dict,
         event_id: str | None = None,

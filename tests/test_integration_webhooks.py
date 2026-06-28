@@ -37,15 +37,11 @@ def _github_signature(body: bytes, secret: str = TEST_SECRET) -> str:
     return f"sha256={digest}"
 
 
-def _stripe_signature(
-    body: bytes, secret: str = TEST_SECRET, timestamp: int | None = None
-) -> str:
+def _stripe_signature(body: bytes, secret: str = TEST_SECRET, timestamp: int | None = None) -> str:
     """실제 Stripe 서명 헤더 생성 (t=...,v1=HMAC-SHA256(`{t}.{payload}`))."""
     ts = timestamp if timestamp is not None else int(time.time())
     signed_payload = f"{ts}.".encode() + body
-    digest = hmac.new(
-        secret.encode("utf-8"), signed_payload, hashlib.sha256
-    ).hexdigest()
+    digest = hmac.new(secret.encode("utf-8"), signed_payload, hashlib.sha256).hexdigest()
     return f"t={ts},v1={digest}"
 
 
@@ -115,9 +111,7 @@ def client(mocker, db_session_mock, redis_mock, async_db):
     app.main.app.dependency_overrides.clear()
 
 
-def _post_github(
-    test_client, tenant_id, payload, *, secret=TEST_SECRET, delivery="d-1"
-):
+def _post_github(test_client, tenant_id, payload, *, secret=TEST_SECRET, delivery="d-1"):
     """유효 GitHub 서명을 붙여 전송 — 보낸 바이트 그대로 서명한다."""
     body = json.dumps(payload).encode("utf-8")
     headers = {
@@ -125,9 +119,7 @@ def _post_github(
         "X-Hub-Signature-256": _github_signature(body, secret),
         "X-GitHub-Delivery": delivery,
     }
-    return test_client.post(
-        f"/webhooks/{tenant_id}/github", content=body, headers=headers
-    )
+    return test_client.post(f"/webhooks/{tenant_id}/github", content=body, headers=headers)
 
 
 def _post_stripe(test_client, tenant_id, payload, *, secret=TEST_SECRET):
@@ -137,9 +129,7 @@ def _post_stripe(test_client, tenant_id, payload, *, secret=TEST_SECRET):
         "content-type": "application/json",
         "stripe-signature": _stripe_signature(body, secret),
     }
-    return test_client.post(
-        f"/webhooks/{tenant_id}/stripe", content=body, headers=headers
-    )
+    return test_client.post(f"/webhooks/{tenant_id}/stripe", content=body, headers=headers)
 
 
 def test_security_headers_present(client):
@@ -176,9 +166,7 @@ def test_receive_github_webhook_valid_signature(client):
     assert response.json() == {"message": "Webhook received and queued for processing."}
     mock_task.apply_async.assert_called_once()
     assert (
-        _counter_value(
-            CUSTOMER_WEBHOOK_TOTAL, customer_id="mock_customer_id", source="github"
-        )
+        _counter_value(CUSTOMER_WEBHOOK_TOTAL, customer_id="mock_customer_id", source="github")
         == initial_webhook_total + 1
     )
 
@@ -194,9 +182,7 @@ def test_receive_github_webhook_invalid_signature(client):
         "source": "github",
         "error_type": "Invalid GitHub signature.",
     }
-    initial_error_total = (
-        REGISTRY.get_sample_value(_ERRORS_METRIC, labels=error_labels) or 0
-    )
+    initial_error_total = REGISTRY.get_sample_value(_ERRORS_METRIC, labels=error_labels) or 0
 
     response = test_client.post(
         f"/webhooks/{tenant_id}/github",
@@ -210,10 +196,7 @@ def test_receive_github_webhook_invalid_signature(client):
 
     assert response.status_code == 401
     mock_task.apply_async.assert_not_called()
-    assert (
-        REGISTRY.get_sample_value(_ERRORS_METRIC, labels=error_labels)
-        == initial_error_total + 1
-    )
+    assert REGISTRY.get_sample_value(_ERRORS_METRIC, labels=error_labels) == initial_error_total + 1
 
 
 def test_receive_github_webhook_tampered_body(client):
@@ -265,17 +248,12 @@ def test_receive_webhook_tenant_not_found(client, async_db):
         "source": "github",
         "error_type": "Tenant not found.",
     }
-    initial_error_total = (
-        REGISTRY.get_sample_value(_ERRORS_METRIC, labels=error_labels) or 0
-    )
+    initial_error_total = REGISTRY.get_sample_value(_ERRORS_METRIC, labels=error_labels) or 0
 
     response = _post_github(test_client, tenant_id, {"action": "opened"})
 
     assert response.status_code == 404
-    assert (
-        REGISTRY.get_sample_value(_ERRORS_METRIC, labels=error_labels)
-        == initial_error_total + 1
-    )
+    assert REGISTRY.get_sample_value(_ERRORS_METRIC, labels=error_labels) == initial_error_total + 1
 
 
 def test_receive_webhook_inactive_tenant(client, async_db, active_customer):
@@ -290,17 +268,12 @@ def test_receive_webhook_inactive_tenant(client, async_db, active_customer):
         "source": "github",
         "error_type": "Tenant is inactive.",
     }
-    initial_error_total = (
-        REGISTRY.get_sample_value(_ERRORS_METRIC, labels=error_labels) or 0
-    )
+    initial_error_total = REGISTRY.get_sample_value(_ERRORS_METRIC, labels=error_labels) or 0
 
     response = _post_github(test_client, tenant_id, {"action": "ping"})
 
     assert response.status_code == 403
-    assert (
-        REGISTRY.get_sample_value(_ERRORS_METRIC, labels=error_labels)
-        == initial_error_total + 1
-    )
+    assert REGISTRY.get_sample_value(_ERRORS_METRIC, labels=error_labels) == initial_error_total + 1
 
 
 # ─── Stripe 실 서명 검증 (construct_event, 300s 허용오차 유지) ────────────────
@@ -322,9 +295,7 @@ def test_receive_stripe_webhook_valid_signature(client):
     assert response.json() == {"message": "Webhook received and queued for processing."}
     mock_task.apply_async.assert_called_once()
     assert (
-        _counter_value(
-            CUSTOMER_WEBHOOK_TOTAL, customer_id="mock_customer_id", source="stripe"
-        )
+        _counter_value(CUSTOMER_WEBHOOK_TOTAL, customer_id="mock_customer_id", source="stripe")
         == initial_webhook_total + 1
     )
 
@@ -340,9 +311,7 @@ def test_receive_stripe_webhook_invalid_signature(client):
         "source": "stripe",
         "error_type": "Invalid Stripe signature.",
     }
-    initial_error_total = (
-        REGISTRY.get_sample_value(_ERRORS_METRIC, labels=error_labels) or 0
-    )
+    initial_error_total = REGISTRY.get_sample_value(_ERRORS_METRIC, labels=error_labels) or 0
 
     response = test_client.post(
         f"/webhooks/{tenant_id}/stripe",
@@ -355,10 +324,7 @@ def test_receive_stripe_webhook_invalid_signature(client):
 
     assert response.status_code == 401
     mock_task.apply_async.assert_not_called()
-    assert (
-        REGISTRY.get_sample_value(_ERRORS_METRIC, labels=error_labels)
-        == initial_error_total + 1
-    )
+    assert REGISTRY.get_sample_value(_ERRORS_METRIC, labels=error_labels) == initial_error_total + 1
 
 
 def test_receive_stripe_webhook_missing_signature(client):
@@ -441,9 +407,7 @@ def test_replay_event_success(client, db_session_mock, mocker):
     response = test_client.post(f"/webhooks/{tenant_id}/events/{event_id}/replay")
 
     assert response.status_code == 202
-    assert response.json() == {
-        "message": f"Event {event_id} has been re-queued for processing."
-    }
+    assert response.json() == {"message": f"Event {event_id} has been re-queued for processing."}
     mock_task.delay.assert_called_once_with(mock_customer_id, mock_payload)
 
 

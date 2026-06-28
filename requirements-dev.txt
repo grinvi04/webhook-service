@@ -6,4 +6,5 @@ pytest-dotenv # For loading .env in pytest
 
 # For Code Quality & DX
 ruff
+mypy
 pre-commit
