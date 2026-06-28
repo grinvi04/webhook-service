@@ -1,0 +1,22 @@
+# commitlint — PR 커밋 메시지가 Conventional Commits 규약을 따르는지 검사하는 기계 게이트.
+# 배경: 커밋 컨벤션(타입 영어 feat/fix/...·본문 한국어)을 prose 규칙 대신 메커니즘으로 강제한다.
+# 규약 정의는 repo 루트의 commitlint.config.cjs (new-repo.sh가 복사). 단일 출처: team-harness code-review.md
+# 셋업: new-repo.sh가 이 파일과 commitlint.config.cjs를 복사하고 'commitlint'를 required check에 등록한다.
+name: commitlint
+
+on:
+  pull_request:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+
+jobs:
+  commitlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      # repo 루트의 commitlint.config.cjs를 cosmiconfig 자동탐색으로 읽어 PR의 모든 커밋 메시지를 검사한다.
+      - uses: wagoid/commitlint-github-action@v6
