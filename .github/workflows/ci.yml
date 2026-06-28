@@ -57,6 +57,9 @@ jobs:
           ruff check .
           ruff format --check .
 
+      - name: Type Check (mypy)
+        run: mypy
+
       # Alembic 다중 head 차단 — head가 2개 이상이면 분기 미머지(위험).
       # 파일명 기반 migration-safety 게이트는 Alembic 분기를 못 잡으므로 여기서 막는다.
       # alembic heads는 versions 디렉터리만 읽어 DB 연결이 필요 없다. 단일 출처: team-harness alembic.md

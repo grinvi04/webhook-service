@@ -12,7 +12,7 @@ from .models.webhook_event import WebhookEvent
 
 
 class KeycloakAuth(AuthenticationBackend):
-    async def login(self, request: Request) -> Response:
+    async def login(self, request: Request) -> Response:  # type: ignore[override]
         keycloak_openid = request.app.state.keycloak_openid
         auth_url = keycloak_openid.auth_url(
             redirect_uri=request.url_for("admin:oauth2_callback"),
@@ -45,14 +45,15 @@ authentication_backend = KeycloakAuth(secret_key=settings.session_secret)
 
 
 class WebhookEventAdmin(ModelView, model=WebhookEvent):
-    column_list = [WebhookEvent.id, WebhookEvent.source, WebhookEvent.received_at]
-    column_searchable_list = [WebhookEvent.source]
-    column_sortable_list = [WebhookEvent.id, WebhookEvent.received_at]
+    column_list = ["id", "source", "received_at"]
+    column_searchable_list = ["source"]
+    column_sortable_list = ["id", "received_at"]
     # Payload is too large for list view
-    column_details_exclude_list = [WebhookEvent.payload]
+    column_details_exclude_list = ["payload"]
     can_create = False
     can_edit = False
-    can_delete = True
+    # 하드삭제 금지 — 감사이력(웹훅 수신 기록) 영구삭제 방지 (M4)
+    can_delete = False
     name = "Webhook Event"
     name_plural = "Webhook Events"
     icon = "fa-solid fa-paper-plane"

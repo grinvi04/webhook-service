@@ -1,13 +1,27 @@
 [tool.ruff]
-line-length = 88
+line-length = 100
 
 [tool.ruff.lint]
 # See https://docs.astral.sh/ruff/rules/ for a full list of rules
-select = ["E", "F", "W", "I", "UP"]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "C4"]
 ignore = []
 
 [tool.ruff.lint.per-file-ignores]
 "alembic/*" = ["E501", "E402"]
 
+[tool.ruff.lint.flake8-bugbear]
+# FastAPI 의존성 주입 관용구 — 인자 기본값의 Depends() 호출은 의도된 패턴(B008 제외)
+extend-immutable-calls = ["fastapi.Depends"]
+
 [tool.ruff.format]
 quote-style = "double"
+
+[tool.mypy]
+python_version = "3.11"
+files = ["app"]
+plugins = ["pydantic.mypy"]
+# 서드파티(celery·keycloak·slowapi·sqladmin·prometheus 등) 타입 스텁 부재 — 무시
+ignore_missing_imports = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+no_implicit_optional = true
