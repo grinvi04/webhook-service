@@ -52,7 +52,8 @@ class WebhookEventAdmin(ModelView, model=WebhookEvent):
     column_details_exclude_list = [WebhookEvent.payload]
     can_create = False
     can_edit = False
-    can_delete = True
+    # 하드삭제 금지 — 감사이력(웹훅 수신 기록) 영구삭제 방지 (M4)
+    can_delete = False
     name = "Webhook Event"
     name_plural = "Webhook Events"
     icon = "fa-solid fa-paper-plane"
