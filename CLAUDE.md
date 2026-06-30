@@ -12,7 +12,7 @@
 - PR 머지 전 게이트는 `pr-review-gate` 스킬 절차를 따른다 (단일 출처)
 - 릴리즈 전 보안 검토는 `security-reviewer` 에이전트를 spawn한다
 - `main`·`develop` 직접 커밋 금지, PR·승인·CI 통과 강제는 GitHub branch protection이 담당한다 (Git Flow는 `AGENTS.md` 참조)
-- `.claude/`는 `.gitignore`로 Git 추적 제외 — 커맨드/훅 변경은 harness 원본 수정 후 동기화
+- `.claude/settings.json`만 커밋(dev 권한 단일출처), 나머지 `.claude/`는 추적 제외 — 커맨드/훅 변경은 harness 원본 수정 후 동기화
 
 ---
 
