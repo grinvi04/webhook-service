@@ -121,5 +121,6 @@ dmypy.json
 .gemini/
 gha-creds-*.json
 
-# Claude Code — 작업 설정 비공개
-.claude/
+# Claude Code — settings.json만 커밋(dev 권한 단일출처), 나머지는 비공개
+.claude/*
+!.claude/settings.json
