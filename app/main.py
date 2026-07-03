@@ -59,7 +59,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Webhook Service",
     description="A service to receive and process webhooks from multiple providers.",
-    version="3.0.0",
+    version="1.1.0",
     lifespan=lifespan,
 )
 
