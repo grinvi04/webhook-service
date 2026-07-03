@@ -32,9 +32,7 @@ def upgrade() -> None:
         sa.Column("allowed_event_types", sa.JSON(), nullable=False),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index(
-        op.f("ix_customers_tenant_id"), "customers", ["tenant_id"], unique=True
-    )
+    op.create_index(op.f("ix_customers_tenant_id"), "customers", ["tenant_id"], unique=True)
     op.create_table(
         "webhook_events",
         sa.Column("id", sa.Integer(), nullable=False),
@@ -60,21 +58,15 @@ def upgrade() -> None:
         ["customer_id"],
         unique=False,
     )
-    op.create_index(
-        op.f("ix_webhook_events_id"), "webhook_events", ["id"], unique=False
-    )
+    op.create_index(op.f("ix_webhook_events_id"), "webhook_events", ["id"], unique=False)
     op.create_index(
         op.f("ix_webhook_events_received_at"),
         "webhook_events",
         ["received_at"],
         unique=False,
     )
-    op.create_index(
-        op.f("ix_webhook_events_source"), "webhook_events", ["source"], unique=False
-    )
-    op.create_index(
-        op.f("ix_webhook_events_status"), "webhook_events", ["status"], unique=False
-    )
+    op.create_index(op.f("ix_webhook_events_source"), "webhook_events", ["source"], unique=False)
+    op.create_index(op.f("ix_webhook_events_status"), "webhook_events", ["status"], unique=False)
     # ### end Alembic commands ###
 
 

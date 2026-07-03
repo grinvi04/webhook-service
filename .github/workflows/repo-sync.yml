@@ -8,6 +8,7 @@
 #   1) team-harness ref(@main)를 운영 정책에 맞게 핀 고정 권장(태그/커밋 SHA).
 #   2) required check로 강제할지(드리프트 = 머지 차단) 혹은 정보성으로 둘지 결정.
 #      MISSING이면 exit 1이라 required로 걸면 표준 게이트가 빠진 PR이 막힌다.
+#   3) team-harness가 private면 checkout에 token 필요(아래 주석 참조).
 name: repo-sync
 
 on:
@@ -21,8 +22,8 @@ permissions:
 jobs:
   repo-sync:
     runs-on: ubuntu-latest
-    # env-gate: 변수 미설정이면 잡 자체가 skip(neutral) → 활성화 전엔 CI를 막지 않는다.
-    # 활성화: repo(또는 org) Variables에 HARNESS_SYNC_ENABLED=true.
+    # env-gate: 변수 미설정이면 잡 자체가 skip(neutral) → 토큰 셋업 전엔 CI를 막지 않는다.
+    # 활성화: repo(또는 org) Variables에 HARNESS_SYNC_ENABLED=true + Secrets에 HARNESS_RO_TOKEN(team-harness 읽기 PAT).
     if: ${{ vars.HARNESS_SYNC_ENABLED == 'true' }}
     steps:
       - uses: actions/checkout@v5  # 대상 repo
@@ -33,6 +34,8 @@ jobs:
           repository: grinvi04/team-harness   # CUSTOMIZE: 사내 호스팅 이전 시 교체
           ref: main                            # CUSTOMIZE: 태그/SHA로 핀 고정 권장
           path: .team-harness
+          # team-harness가 private면 읽기 토큰 필요(public이면 이 줄 삭제 가능):
+          token: ${{ secrets.HARNESS_RO_TOKEN }}
 
       - uses: actions/setup-node@v5
         with:
