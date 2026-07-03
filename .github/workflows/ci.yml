@@ -99,6 +99,32 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+  alembic-heads:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install alembic
+        run: |
+          python -m pip install --upgrade pip
+          pip install alembic psycopg2-binary
+
+      - name: Check alembic heads (단일 head 강제)
+        env:
+          DATABASE_URL: postgresql+psycopg2://postgres:postgres@localhost:5432/test_db
+        run: |
+          HEADS=$(alembic heads 2>/dev/null | grep -c . || true)
+          if [ "$HEADS" -gt 1 ]; then
+            echo "✖ Alembic head가 ${HEADS}개 — 분기 미머지. 'alembic merge'로 단일 head로 합치세요."
+            exit 1
+          fi
+          echo "✓ Alembic 단일 head ($HEADS)"
+
   secret-scan:
     runs-on: ubuntu-latest
     permissions:
