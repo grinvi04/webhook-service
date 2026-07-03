@@ -1,13 +1,10 @@
-import base64
-import json
-import time
-
 from fastapi import Request, Response
 from sqladmin import Admin, ModelView
 from sqladmin.authentication import AuthenticationBackend
 from starlette.responses import RedirectResponse
 
 from .config import settings
+from .dependencies import _get_keycloak_public_key
 from .models.webhook_event import WebhookEvent
 
 
@@ -29,12 +26,13 @@ class KeycloakAuth(AuthenticationBackend):
         if not token:
             return False
         try:
-            payload_b64 = token.split(".")[1]
-            payload_b64 += "=" * ((4 - len(payload_b64) % 4) % 4)
-            payload = json.loads(base64.urlsafe_b64decode(payload_b64))
-            if payload.get("exp", 0) < time.time():
-                request.session.clear()
-                return False
+            keycloak_openid = request.app.state.keycloak_openid
+            public_key = await _get_keycloak_public_key(keycloak_openid)
+            keycloak_openid.decode_token(
+                token,
+                key=public_key,
+                options={"verify_signature": True, "verify_aud": False, "exp": True},
+            )
             return True
         except Exception:
             request.session.clear()
