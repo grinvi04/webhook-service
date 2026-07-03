@@ -1,11 +1,11 @@
-# test-guard — PR에서 테스트가 (소리없이) 삭제되는 것을 차단하는 기계 게이트.
+# test-guard — PR에서 테스트/마이그레이션이 (소리없이) 삭제되는 것을 차단하는 기계 게이트.
 # 배경: harness-guard 훅은 Bash 커맨드만 검사하고(Edit/Write로 테스트 삭제 못 잡음),
 # CI는 테스트가 삭제되면 그냥 green이라 못 잡는다. 이 게이트가 그 공백을 메운다.
 # 정당한 제거(데드코드 정리 등)는 PR에 'allow-test-removal' 라벨을 붙이면 통과.
 #
-# 스택 무관: 흔한 테스트 마커를 repo 전역에서 센다(@Test / it()·test() / def test_ / rspec it).
-# 필요 시 프로젝트가 count() 정규식을 스택에 맞게 좁혀도 된다.
-# 셋업: new-repo.sh가 이 파일을 복사하고 'test-guard'를 required check에 등록한다.
+# webhook-service 맞춤: pytest 테스트(tests/)와 Alembic 마이그레이션(alembic/versions/)을
+# 둘 다 보호한다 — 마커 def test_(테스트)·def upgrade(마이그레이션)를 두 경로에서만 센다.
+# 단일 출처: team-harness templates/ci/test-guard.yml
 name: test-guard
 
 on:
@@ -20,7 +20,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Detect test removals
+      - name: Detect test/migration removals
         env:
           BASE: ${{ github.base_ref }}
           LABELS: ${{ toJson(github.event.pull_request.labels.*.name) }}
@@ -28,25 +28,25 @@ jobs:
           set -uo pipefail
 
           if echo "$LABELS" | grep -q "allow-test-removal"; then
-            echo "::notice::'allow-test-removal' 라벨 — 테스트 감소 허용(게이트 스킵)"
+            echo "::notice::'allow-test-removal' 라벨 — 테스트/마이그레이션 감소 허용(게이트 스킵)"
             exit 0
           fi
 
           git fetch --quiet origin "$BASE"
 
-          # 테스트 마커 총개수(스택 무관): JUnit @Test / JS·TS it()·test() / pytest def test_
-          # (rspec `it '...' do` 등은 프로젝트가 MARKER를 보강해 커버)
-          MARKER='@Test|(^|[^A-Za-z_])(it|test)[[:space:]]*\(|def[[:space:]]+test_'
+          # pytest 테스트(def test_) + Alembic 마이그레이션(def upgrade) 마커를
+          # tests/ · alembic/versions/ 경로에서만 센다(webhook-service 스택 맞춤).
+          MARKER='def[[:space:]]+test_|def[[:space:]]+upgrade'
           count() {
-            git grep -hIE "$MARKER" "$1" 2>/dev/null | grep -cE "$MARKER" || true
+            git grep -hIE "$MARKER" "$1" -- tests alembic/versions 2>/dev/null | grep -cE "$MARKER" || true
           }
 
           BEFORE=$(count "origin/$BASE")
           AFTER=$(count "HEAD")
-          echo "테스트 마커 — base($BASE)=$BEFORE, PR(merge)=$AFTER"
+          echo "테스트·마이그레이션 마커 — base($BASE)=$BEFORE, PR(merge)=$AFTER"
 
           if [ "$AFTER" -lt "$BEFORE" ]; then
-            echo "::error::테스트가 $((BEFORE - AFTER))개 감소했습니다. 의도된 제거라면 PR에 'allow-test-removal' 라벨을 붙이세요."
+            echo "::error::테스트/마이그레이션이 $((BEFORE - AFTER))개 감소했습니다. 의도된 제거라면 PR에 'allow-test-removal' 라벨을 붙이세요."
             exit 1
           fi
-          echo "✅ 테스트 감소 없음"
+          echo "✅ 테스트·마이그레이션 감소 없음"

@@ -24,13 +24,8 @@ _KEYCLOAK_KEY_TTL = 300  # 5분
 
 async def _get_keycloak_public_key(keycloak_openid) -> str:
     now = time.time()
-    if (
-        _keycloak_public_key_cache["key"] is None
-        or now >= _keycloak_public_key_cache["expires_at"]
-    ):
-        _keycloak_public_key_cache["key"] = await asyncio.to_thread(
-            keycloak_openid.public_key
-        )
+    if _keycloak_public_key_cache["key"] is None or now >= _keycloak_public_key_cache["expires_at"]:
+        _keycloak_public_key_cache["key"] = await asyncio.to_thread(keycloak_openid.public_key)
         _keycloak_public_key_cache["expires_at"] = now + _KEYCLOAK_KEY_TTL
     return _keycloak_public_key_cache["key"]
 
@@ -108,7 +103,7 @@ async def get_current_user(request: Request) -> dict[str, Any]:
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials",
             headers={"WWW-Authenticate": "Bearer"},
-        )
+        ) from e
 
 
 class WebhookVerifier:
@@ -126,7 +121,8 @@ class WebhookVerifier:
             raise HTTPException(status_code=404, detail="Tenant not found.")
 
         body = await request.body()
-        secret = customer.webhook_secret
+        # 레거시 Column 타입을 str로 좁힘 — 런타임 값은 이미 str
+        secret: str = customer.webhook_secret  # type: ignore[assignment]
 
         if self.source == "github":
             await self._verify_github(request, body, secret)
@@ -146,9 +142,7 @@ class WebhookVerifier:
             raise HTTPException(status_code=403, detail="Tenant is inactive.")
         return customer
 
-    async def _get_customer_async(
-        self, db: AsyncSession, tenant_id: str
-    ) -> Customer | None:
+    async def _get_customer_async(self, db: AsyncSession, tenant_id: str) -> Customer | None:
         customer = await CustomerRepository.get_by_tenant_id_async(db, tenant_id)
         if customer and not customer.is_active:
             raise HTTPException(status_code=403, detail="Tenant is inactive.")
@@ -159,9 +153,7 @@ class WebhookVerifier:
         signature_header = request.headers.get("x-hub-signature-256")
 
         if not signature_header:
-            raise HTTPException(
-                status_code=400, detail="X-Hub-Signature-256 header is missing."
-            )
+            raise HTTPException(status_code=400, detail="X-Hub-Signature-256 header is missing.")
 
         signature = hmac.new(secret_bytes, body, hashlib.sha256).hexdigest()
         expected_signature = f"sha256={signature}"
@@ -172,17 +164,11 @@ class WebhookVerifier:
     async def _verify_stripe(self, request: Request, body: bytes, secret: str):
         signature_header = request.headers.get("stripe-signature")
         if not signature_header:
-            raise HTTPException(
-                status_code=400, detail="Stripe-Signature header is missing."
-            )
+            raise HTTPException(status_code=400, detail="Stripe-Signature header is missing.")
 
         try:
             # Use the official Stripe library to construct and verify the event
-            stripe.Webhook.construct_event(
-                payload=body, sig_header=signature_header, secret=secret
-            )
-        except stripe.error.SignatureVerificationError as e:
+            stripe.Webhook.construct_event(payload=body, sig_header=signature_header, secret=secret)
+        except stripe.SignatureVerificationError as e:
             # The signature is invalid
-            raise HTTPException(
-                status_code=401, detail="Invalid Stripe signature."
-            ) from e
+            raise HTTPException(status_code=401, detail="Invalid Stripe signature.") from e

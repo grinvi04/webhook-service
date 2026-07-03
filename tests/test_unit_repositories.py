@@ -98,9 +98,7 @@ def test_webhook_event_repo_create_does_not_auto_commit(db):
 
     customer = _make_customer(db)
 
-    WebhookEventRepository.create(
-        db, customer_id=customer.id, source="github", payload={}
-    )
+    WebhookEventRepository.create(db, customer_id=customer.id, source="github", payload={})
     db.rollback()
 
     remaining = db.execute(text("SELECT COUNT(*) FROM webhook_events")).scalar()
@@ -109,14 +107,10 @@ def test_webhook_event_repo_create_does_not_auto_commit(db):
 
 def test_webhook_event_repo_get_for_customer_found(db):
     customer = _make_customer(db)
-    evt = WebhookEventRepository.create(
-        db, customer_id=customer.id, source="github", payload={}
-    )
+    evt = WebhookEventRepository.create(db, customer_id=customer.id, source="github", payload={})
     db.flush()
 
-    result = WebhookEventRepository.get_for_customer(
-        db, event_id=evt.id, customer_id=customer.id
-    )
+    result = WebhookEventRepository.get_for_customer(db, event_id=evt.id, customer_id=customer.id)
 
     assert result is not None
     assert result.id == evt.id
@@ -125,27 +119,19 @@ def test_webhook_event_repo_get_for_customer_found(db):
 
 def test_webhook_event_repo_get_for_customer_wrong_customer(db):
     customer = _make_customer(db)
-    evt = WebhookEventRepository.create(
-        db, customer_id=customer.id, source="github", payload={}
-    )
+    evt = WebhookEventRepository.create(db, customer_id=customer.id, source="github", payload={})
     db.flush()
 
-    result = WebhookEventRepository.get_for_customer(
-        db, event_id=evt.id, customer_id=uuid.uuid4()
-    )
+    result = WebhookEventRepository.get_for_customer(db, event_id=evt.id, customer_id=uuid.uuid4())
 
     assert result is None
 
 
 def test_webhook_event_repo_get_for_customer_wrong_event_id(db):
     customer = _make_customer(db)
-    WebhookEventRepository.create(
-        db, customer_id=customer.id, source="github", payload={}
-    )
+    WebhookEventRepository.create(db, customer_id=customer.id, source="github", payload={})
     db.flush()
 
-    result = WebhookEventRepository.get_for_customer(
-        db, event_id=99999, customer_id=customer.id
-    )
+    result = WebhookEventRepository.get_for_customer(db, event_id=99999, customer_id=customer.id)
 
     assert result is None
