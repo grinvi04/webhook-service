@@ -69,15 +69,16 @@ async def get_current_user(request: Request) -> dict[str, Any]:
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    try:
-        token_type, access_token = auth_header.split(" ")
-        if token_type.lower() != "bearer":
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid authentication scheme",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
+    parts = auth_header.split(" ")
+    if len(parts) != 2 or parts[0].lower() != "bearer":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication scheme",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token = parts[1]
 
+    try:
         # app.state에 저장된 keycloak_openid 객체 사용
         keycloak_openid = request.app.state.keycloak_openid
 
