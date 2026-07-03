@@ -184,9 +184,11 @@ async def test_auth_invalid_token_raises_401():
     state.keycloak_openid = mock_kc
     req = _make_request({"Authorization": "Bearer invalidtoken"}, app_state=state)
 
-    with patch(_KC_PATCH, new=AsyncMock(return_value="pubkey")):
-        with pytest.raises(HTTPException) as exc_info:
-            await get_current_user(req)
+    with (
+        patch(_KC_PATCH, new=AsyncMock(return_value="pubkey")),
+        pytest.raises(HTTPException) as exc_info,
+    ):
+        await get_current_user(req)
 
     assert exc_info.value.status_code == 401
     assert exc_info.value.detail == "Could not validate credentials"
