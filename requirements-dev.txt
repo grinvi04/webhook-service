@@ -5,6 +5,6 @@ pytest-asyncio # For async tests
 pytest-dotenv # For loading .env in pytest
 
 # For Code Quality & DX
-ruff
+ruff==0.15.15
 mypy
 pre-commit
