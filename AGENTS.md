@@ -3,6 +3,11 @@
 > 이 파일은 모든 AI 코딩 도구의 단일 규약 출처다.
 > Claude Code는 CLAUDE.md의 `@AGENTS.md` import로 이 파일을 읽는다.
 
+## Stack Rule 전달
+
+작업 대상 stack과 관련된 `.claude/rules/*.md`를 작업 전에 읽는다. 이 경로는 Claude Code가 자동
+로드하며, Codex와 Gemini는 이 지시에 따라 같은 원문을 명시적으로 읽는다.
+
 ## 프로젝트 개요
 
 FastAPI + Celery + PostgreSQL + Redis 기반 멀티테넌트 웹훅 처리 서비스.
