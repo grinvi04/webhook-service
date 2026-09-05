@@ -164,9 +164,15 @@ function isPrivilegeListContinuation(code, nextLine) {
     !/\b(?:TO|FROM)\b/i.test(code) && PRIVILEGE_CONTINUATION_RE.test(nextLine)
 }
 
+function isAlterTableContinuation(code, nextLine) {
+  return /^\s*ALTER\s+TABLE\b/i.test(code) &&
+    /^\s*(?:DROP|ALTER)(?:\s|\/\*[\s\S]*?\*\/|--[^\n]*(?:\n|$))+COLUMN\b/i.test(nextLine)
+}
+
 function parseStatements(sql, mode) {
   const stmts = []
   let code = '', approved = false, statementValid = true, hadLexicalError = false
+  let arrayDepth = 0, arrayCode = '', arrayApproved = false, arrayStart = 0, bracketFallback = false
   const push = () => {
     if (code.trim() || approved) stmts.push({ code, approved, valid: statementValid })
     code = ''
@@ -321,7 +327,36 @@ function parseStatements(sql, mode) {
       i = j
       continue
     }
+    // PostgreSQL ARRAY의 ]]는 중첩 배열의 닫힘이다. 식별자 escape로 읽어 다음 문장까지 삼키지 않는다.
+    // 내부 문자열·주석은 위 lexer 분기를 재사용하고, 배열 전체는 키워드 판정에서 불투명하게 유지한다.
+    if (mode.postgresDollarQuotes && c === '[' && !bracketFallback &&
+      (arrayDepth > 0 || /(?:^|[^\p{L}\p{N}_$@#])ARRAY\s*$/iu.test(code))) {
+      if (arrayDepth === 0) { arrayCode = code; arrayApproved = approved; arrayStart = i }
+      arrayDepth++
+      code += ' '
+      i++
+      continue
+    }
+    if (c === ']' && arrayDepth > 0) {
+      arrayDepth--
+      if (arrayDepth === 0) {
+        code = arrayCode + ' '
+        approved = arrayApproved
+        if (c2 === ']') {
+          // ARRAY 뒤의 여분 ]는 PostgreSQL에서 불가능하다. T-SQL 인용 별칭의 ]]일 수 있으므로
+          // 그 토큰 전체로 복구해 내부 세미콜론 이후를 새 실행문으로 잘못 판정하지 않는다.
+          statementValid = false
+          hadLexicalError = true
+          bracketFallback = true
+          i = arrayStart
+          continue
+        }
+      }
+      i++
+      continue
+    }
     if (c === '[') {
+      bracketFallback = false
       let j = i + 1
       let closed = false
       while (j < n) {
@@ -337,20 +372,33 @@ function parseStatements(sql, mode) {
       i = j
       continue
     }
+    if (mode.postgresDollarQuotes && c === ']') {
+      statementValid = false
+      hadLexicalError = true
+    }
     // T-SQL은 세미콜론이 없어도 다음 command keyword로 새 문장을 시작할 수 있다.
     if (c === '\n' && mode.newlineStatements && code.trim()) {
       const nextLine = sql.slice(i + 1)
-      if (TSQL_LINE_START_RE.test(nextLine) && !isPrivilegeListContinuation(code, nextLine)) {
+      if (TSQL_LINE_START_RE.test(nextLine) && !isPrivilegeListContinuation(code, nextLine) &&
+        !isAlterTableContinuation(code, nextLine)) {
         push()
         i++
         continue
       }
     }
     // 문장 종결
-    if (c === ';') { push(); i++; continue }
+    if (c === ';') {
+      if (arrayDepth > 0) {
+        statementValid = false
+        hadLexicalError = true
+      } else push()
+      i++
+      continue
+    }
     code += c
     i++
   }
+  if (arrayDepth > 0) { statementValid = false; hadLexicalError = true }
   push() // 종결자 없는 마지막 문장
   return { stmts, hadLexicalError }
 }
