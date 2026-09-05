@@ -40,8 +40,8 @@
  *
  * 단일 출처: docs/db-standards.md · docs/specs/rails-stack-completion.md
  */
-import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs'
-import { join } from 'node:path'
+import { readFileSync, readdirSync, statSync, lstatSync, existsSync, realpathSync } from 'node:fs'
+import { join, relative, isAbsolute, sep } from 'node:path'
 
 const args = process.argv.slice(2)
 if (args.includes('--help') || args.includes('-h')) {
@@ -75,18 +75,48 @@ const roots = args.length ? args : ['.']
 // ── 파일 탐색 ─────────────────────────────────────────────
 const IGNORE = new Set(['node_modules', '.git', 'build', 'target', '.gradle', 'dist', '.next', 'out', 'vendor', '.venv'])
 
-function walk(dir, onFile, depth = 0) {
-  if (depth > 12 || !existsSync(dir)) return
-  let entries
-  try { entries = readdirSync(dir) } catch { return }
-  for (const name of entries) {
-    if (IGNORE.has(name)) continue
-    const p = join(dir, name)
-    let s
-    try { s = statSync(p) } catch { continue }
-    if (s.isDirectory()) walk(p, onFile, depth + 1)
-    else onFile(p, name)
+function isWithinRoot(rootIdentity, targetIdentity) {
+  const rel = relative(rootIdentity, targetIdentity)
+  return rel !== '..' && !rel.startsWith(`..${sep}`) && !isAbsolute(rel)
+}
+
+function failSymlink(p, reason) {
+  console.error(`✖ symlink 탐색 경계 위반: ${p} — ${reason}`)
+  process.exit(1)
+}
+
+function walk(root, onFile, isRelevant) {
+  if (!existsSync(root)) return
+  let rootIdentity
+  try { rootIdentity = realpathSync(root) } catch { return }
+
+  function visit(dir) {
+    let entries
+    try { entries = readdirSync(dir) } catch { return }
+    for (const name of entries) {
+      if (IGNORE.has(name)) continue
+      const p = join(dir, name)
+      let s
+      try { s = lstatSync(p) } catch { continue }
+      if (s.isSymbolicLink()) {
+        let target
+        try { target = statSync(p) } catch {
+          if (isRelevant(p, name)) failSymlink(p, 'dangling target')
+          continue
+        }
+        if (target.isDirectory()) failSymlink(p, 'directory symlink unsupported')
+        if (!isRelevant(p, name)) continue
+        if (!target.isFile()) failSymlink(p, 'target is not a regular file')
+        let targetIdentity
+        try { targetIdentity = realpathSync(p) } catch { failSymlink(p, 'target resolution failed') }
+        if (!isWithinRoot(rootIdentity, targetIdentity)) failSymlink(p, 'target escapes scan root')
+        onFile(p, name)
+      } else if (s.isDirectory()) visit(p)
+      else if (s.isFile() && isRelevant(p, name)) onFile(p, name)
+    }
   }
+
+  visit(root)
 }
 
 // ActiveRecord 마이그레이션 지문: `< ActiveRecord::Migration` 상속 + change/up/down 메서드 정의.
@@ -96,7 +126,7 @@ const HAS_METHOD = /\bdef\s+(?:self\.)?(?:change|up|down)\b/
 
 const rbFiles = []
 for (const root of roots) {
-  walk(root, (p, name) => { if (/\.rb$/i.test(name)) rbFiles.push(p) })
+  walk(root, (p) => { rbFiles.push(p) }, (_p, name) => /\.rb$/i.test(name))
 }
 
 const migrationFiles = []

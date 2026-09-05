@@ -1,7 +1,7 @@
 # commitlint — PR 커밋 메시지가 Conventional Commits 규약을 따르는지 검사하는 기계 게이트.
 # 배경: 커밋 컨벤션(타입 영어 feat/fix/...·본문 한국어)을 prose 규칙 대신 메커니즘으로 강제한다.
-# 규약 정의는 repo 루트의 commitlint.config.cjs (new-repo.sh가 복사). 단일 출처: team-harness code-review.md
-# 셋업: new-repo.sh가 이 파일과 commitlint.config.cjs를 복사하고 'commitlint'를 required check에 등록한다.
+# 규약 강제는 scripts/check-commit-message.cjs가 담당한다. 단일 출처: team-harness code-review.md
+# 셋업: new-repo.sh가 workflow·validator를 복사하고 'commitlint'를 required check에 등록한다.
 name: commitlint
 
 on:
@@ -20,10 +20,24 @@ jobs:
           fetch-depth: 0
       - name: 커밋 metadata·메시지 provenance 검사
         env:
+          BASE_REF: ${{ github.base_ref }}
+          HEAD_REF: ${{ github.head_ref }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: node scripts/check-commit-message.cjs --range "$BASE_SHA..$HEAD_SHA"
-      # action 기본 경로(.mjs)에 맡기지 않고 repo 정본 .cjs를 지정해 PR의 모든 커밋 메시지를 검사한다.
-      - uses: wagoid/commitlint-github-action@b948419dd99f3fd78a6548d48f94e3df7f6bf3ed # v6
-        with:
-          configFile: ./commitlint.config.cjs
+        run: |
+          if [ "$BASE_REF" = "main" ]; then
+            git fetch --no-tags origin develop
+            DEVELOP_SHA="$(git rev-parse FETCH_HEAD)"
+            node scripts/check-commit-message.cjs --range "$BASE_SHA..$HEAD_SHA" --exclude "$DEVELOP_SHA"
+          elif [[ "$BASE_REF" = "develop" && "$HEAD_REF" == sync/backmerge-* ]]; then
+            git fetch --no-tags origin main
+            MAIN_SHA="$(git rev-parse FETCH_HEAD)"
+            BACKMERGE_COMMITS="$(git rev-list "$BASE_SHA..$HEAD_SHA" "^$MAIN_SHA" --)"
+            if [ -z "$BACKMERGE_COMMITS" ]; then
+              echo "main에 없는 backmerge commit이 없어 검사를 마칩니다."
+            else
+              node scripts/check-commit-message.cjs --range "$BASE_SHA..$HEAD_SHA" --exclude "$MAIN_SHA"
+            fi
+          else
+            node scripts/check-commit-message.cjs --range "$BASE_SHA..$HEAD_SHA"
+          fi
