@@ -211,3 +211,12 @@ webhook-service(FastAPI/Python)는 같은 손·같은 패턴으로 만들어져 
 기존 로컬 후보 `2d082815`의 파일 트리를 보존하고, 미게시 커밋의 메시지 형식 오류를 해소하기 위해 원격 전달용 단일 커밋으로 묶었다. 기존 커밋은 `codex/evidence-webhook-2d08281`에 보존한다. 앱·시험·의존성·workflow 입력은 동일하며 기존 SDK 7.1.1 검증 원문은 당시 후보의 증거다. PR은 develop을 대상으로 기존 필수 `commitlint`를 유지한다. main/default trusted 검사 배치·필수 검사 전환·GHCR 게시·운영 배포는 이번 develop 인수의 완료 범위에 포함하지 않는다. 실제 원격 CI·리뷰·병합 결과는 전달 PR에서 확인하며 미실행을 PASS로 표시하지 않는다.
 
 원격 PR #71 첫 실행은 build/test 등 기존 검사 PASS지만 secret-scan이 QA SHA-256 두 건을 오탐하여 FAIL였다. 이 실패는 보존한다. 위 결정의 정확한 두 fingerprint와 동일 scanner 버전의 허용/거부 반증을 적용하고 새 후보의 원격 secret-scan까지 통과해야 develop 인수할 수 있다.
+
+
+## v1.5.0 릴리즈 인수 (2026-10-07, 준비 중)
+
+사용자는 main 릴리즈·GHCR 이미지 게시를 승인했다. 운영 배포·운영 DB 변경은 제외한다. develop 기준은 `c42142483fb1b95e88f6af5e16872c3c26f294e0`, 기존 main은 `b90519856bafe050c05d1f3d61b7674b01192a5d`다. main 고유 두 merge 이력은 소스 차이를 만들지 않으며 merge-tree 결과는 develop tree와 같다. Alembic versions diff도 없다. 이번 준비 변경은 API 버전·README 1.5.0과 이 진행 기록만이다.
+
+필수 인수: 같은 후보의 lint/format/mypy/pytest 및 원격 required CI, 고정 후보 독립 보안·DB·설정 검토, main 병합 SHA와 tag 일치, main push의 이미지 게시 성공 및 digest, develop 역병합, 관련 문서와 작업 공간 정리다. 기존 실 Keycloak 및 runtime/dev pin graph 감사 0 증거는 해당 인증·의존성 입력이 불변인 범위에서 재사용하며 버전 준비를 실 인증 재시험으로 쓰지 않는다. staging/운영 endpoint는 AGENTS에 정의되지 않고 운영 미배포이므로 GHCR 게시와 운영 health를 구분한다.
+
+현재 main PR·태그·이미지·역병합·trusted 이벤트 실제 실행/보호 전환은 미실행이다. trusted는 main에 배치한 뒤 후속 실제 develop PR에서 현재 head의 실행 성공을 확인하고, 기존 commitlint를 유지한 채 context를 먼저 추가·readback한 뒤 legacy 요구/자산을 정리한다. 이 준비 기록만으로 검사 활성화나 배포 완료를 판정하지 않는다.
