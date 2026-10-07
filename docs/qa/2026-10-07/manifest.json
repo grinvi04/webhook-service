@@ -9,8 +9,8 @@
     ".pre-commit-config.yaml": "e08bfb3e860f49f5562bc7328a8b2a1acdff6aa9cf85316b96e6d02fbe021092",
     "AGENTS.md": "cd7f97a6655e40c1065a73f06bba8f6dbccb250444994d3f2c9304c2304daaa2",
     "README.md": "866fe77d85db29452fa17538a7ba337c86af483d5c5e553595794fe4570ca686",
-    "docs/decisions.md": "bd9945440469b431d028e1f10c6bbdc5956734d9e48f2d43254924e857e8041a",
-    "docs/specs/quality-remediation.md": "955941b437f15d7a8c2b79377455ad2d1c0c90ea97bef922642c2bcaeb06ba5f",
+    "docs/decisions.md": "dde4a47b30b606953d0cfa2529c3e0129736d4d50a38b6bd3332800f8e53a406",
+    "docs/specs/quality-remediation.md": "50cf2240e49b0742500cf1958dd73d9abfe70397a723383cf3f89663331df71b",
     "requirements.txt": "020eaeed45d8069fcb636d8cd0272e485b5822c0dbbadafd5d67f80a3d6f65e1",
     "tests/test_envelope.py": "1d301001bb308e3c11a76c30bcfe1f7b97ba05bac9ce278ebb3ee745b08f6a63",
     "tests/test_idempotency.py": "1e765efa6c9141e59a1989ea5c132eaee739b1cc08dd823e3e9ddd11563bca90",
@@ -435,6 +435,8 @@
     "preserved_ref": "codex/evidence-webhook-2d08281",
     "app_test_dependency_tree": "unchanged",
     "remote_ci": "NOT_RUN at document commit",
-    "scope": "develop PR/CI/review/merge; trusted default bootstrap and publication excluded"
+    "scope": "develop PR/CI/review/merge; trusted default bootstrap and publication excluded",
+    "first_remote_ci": "secret-scan FAIL: two file SHA-256 false positives; remaining required CI PASS",
+    "gitleaks": "8.24.3 historical exact fingerprints only; original RED2, exact GREEN0, same-path synthetic token RED"
   }
 }

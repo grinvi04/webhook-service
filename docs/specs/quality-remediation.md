@@ -209,3 +209,5 @@ webhook-service(FastAPI/Python)는 같은 손·같은 패턴으로 만들어져 
 ## 2026-10-07 원격 전달 단계
 
 기존 로컬 후보 `2d082815`의 파일 트리를 보존하고, 미게시 커밋의 메시지 형식 오류를 해소하기 위해 원격 전달용 단일 커밋으로 묶었다. 기존 커밋은 `codex/evidence-webhook-2d08281`에 보존한다. 앱·시험·의존성·workflow 입력은 동일하며 기존 SDK 7.1.1 검증 원문은 당시 후보의 증거다. PR은 develop을 대상으로 기존 필수 `commitlint`를 유지한다. main/default trusted 검사 배치·필수 검사 전환·GHCR 게시·운영 배포는 이번 develop 인수의 완료 범위에 포함하지 않는다. 실제 원격 CI·리뷰·병합 결과는 전달 PR에서 확인하며 미실행을 PASS로 표시하지 않는다.
+
+원격 PR #71 첫 실행은 build/test 등 기존 검사 PASS지만 secret-scan이 QA SHA-256 두 건을 오탐하여 FAIL였다. 이 실패는 보존한다. 위 결정의 정확한 두 fingerprint와 동일 scanner 버전의 허용/거부 반증을 적용하고 새 후보의 원격 secret-scan까지 통과해야 develop 인수할 수 있다.

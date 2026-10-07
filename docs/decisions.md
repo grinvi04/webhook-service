@@ -23,3 +23,7 @@
 | 관리자 UI 보안 수정판 SQLAdmin 0.27.1은 Starlette 1.x를 요구한다. FastAPI 0.133.0·Starlette 1.3.1·Prometheus Instrumentator 8.0.1을 함께 고정하고 HTTP/admin/metrics/큐 회귀로 확인한다. python-keycloak 2.0.0의 인증 의존성 변경은 별도 검토 대상으로 남긴다. | 2026-10 | `requirements.txt`, `docs/specs/quality-remediation.md` |
 
 > 위는 기존 CLAUDE.md·AGENTS.md의 핵심 결정을 시드로 이관한 것. 새 설계 결정·도메인 지식은 여기 계속 누적한다.
+
+## 2026-10-07 — QA 지문 오탐의 정확한 식별
+
+PR #71의 Gitleaks 8.24.3이 manifest의 `tests/test_keycloak_contract.py`와 설치된 `keycloak_openid.py` SHA-256을 `generic-api-key`로 오탐했다. 두 값은 해당 원본 파일의 해시와 실제로 같다. `.gitleaksignore`에는 그 **커밋·파일·규칙·행**의 fingerprint 두 개만 기록한다. 파일/디렉터리 또는 규칙 전체를 제외하지 않는다. 같은 8.24.3에서 무시 목록 없는 원래 range는 2건/exit 1, 정확한 두 fingerprint 적용은 0건/exit 0이며 같은 경로의 별도 합성 token은 계속 exit 1이다. 원래 원격 실패와 로컬 반증 원문은 이번 전달 근거에 보존한다. [공식 fingerprint 안내](https://github.com/gitleaks/gitleaks#gitleaksignore).
