@@ -1,0 +1,107 @@
+....F.FFFFFFF                                                            [100%]
+=================================== FAILURES ===================================
+________ test_missing_mismatched_other_browser_and_expired_state_denied ________
+tests/test_keycloak_contract.py:153: in test_missing_mismatched_other_browser_and_expired_state_denied
+    signed = _session(client)
+             ^^^^^^^^^^^^^^^^
+tests/test_keycloak_contract.py:43: in _session
+    cookie = client.cookies.get("session")
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/httpx/_models.py:1161: in get
+    raise CookieConflict(message)
+E   httpx.CookieConflict: Multiple cookies exist with name=session
+----------------------------- Captured stdout call -----------------------------
+{"event": "HTTP Request: GET http://testserver/admin/login \"HTTP/1.1 307 Temporary Redirect\"", "level": "info", "logger": "httpx", "timestamp": "2026-10-07T01:15:21.400154Z", "func_name": "_send_single_request", "lineno": 1025}
+{"event": "HTTP Request: GET http://testserver/admin/oauth2-callback?code=synthetic-code \"HTTP/1.1 422 Unprocessable Entity\"", "level": "info", "logger": "httpx", "timestamp": "2026-10-07T01:15:21.402516Z", "func_name": "_send_single_request", "lineno": 1025}
+{"event": "HTTP Request: GET http://testserver/admin/oauth2-callback?code=synthetic-code&state=hKgNzHYls7VqcagrSRqsoD8ASVKoizRHjdy-CFm9dXY \"HTTP/1.1 401 Unauthorized\"", "level": "info", "logger": "httpx", "timestamp": "2026-10-07T01:15:21.403980Z", "func_name": "_send_single_request", "lineno": 1025}
+{"event": "HTTP Request: GET http://testserver/admin/oauth2-callback?code=synthetic-code&state=wrong-state \"HTTP/1.1 401 Unauthorized\"", "level": "info", "logger": "httpx", "timestamp": "2026-10-07T01:15:21.405314Z", "func_name": "_send_single_request", "lineno": 1025}
+{"event": "HTTP Request: GET http://testserver/admin/login \"HTTP/1.1 307 Temporary Redirect\"", "level": "info", "logger": "httpx", "timestamp": "2026-10-07T01:15:21.406650Z", "func_name": "_send_single_request", "lineno": 1025}
+{"event": "HTTP Request: GET http://testserver/admin/oauth2-callback?code=synthetic-code&state=17nF1_a5qGrhhH1FrndbC6YheUk69eJjvtk67bw4_eY \"HTTP/1.1 401 Unauthorized\"", "level": "info", "logger": "httpx", "timestamp": "2026-10-07T01:15:21.408167Z", "func_name": "_send_single_request", "lineno": 1025}
+{"event": "HTTP Request: GET http://testserver/admin/login \"HTTP/1.1 307 Temporary Redirect\"", "level": "info", "logger": "httpx", "timestamp": "2026-10-07T01:15:21.409377Z", "func_name": "_send_single_request", "lineno": 1025}
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/admin/login "HTTP/1.1 307 Temporary Redirect"
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/admin/oauth2-callback?code=synthetic-code "HTTP/1.1 422 Unprocessable Entity"
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/admin/oauth2-callback?code=synthetic-code&state=hKgNzHYls7VqcagrSRqsoD8ASVKoizRHjdy-CFm9dXY "HTTP/1.1 401 Unauthorized"
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/admin/oauth2-callback?code=synthetic-code&state=wrong-state "HTTP/1.1 401 Unauthorized"
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/admin/login "HTTP/1.1 307 Temporary Redirect"
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/admin/oauth2-callback?code=synthetic-code&state=17nF1_a5qGrhhH1FrndbC6YheUk69eJjvtk67bw4_eY "HTTP/1.1 401 Unauthorized"
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/admin/login "HTTP/1.1 307 Temporary Redirect"
+___________________ test_signed_admin_role_allows_dashboard ____________________
+tests/test_keycloak_contract.py:221: in test_signed_admin_role_allows_dashboard
+    assert result.status_code == 200
+E   assert 307 == 200
+E    +  where 307 = <Response [307 Temporary Redirect]>.status_code
+----------------------------- Captured stdout call -----------------------------
+{"event": "HTTP Request: GET http://testserver/admin \"HTTP/1.1 307 Temporary Redirect\"", "level": "info", "logger": "httpx", "timestamp": "2026-10-07T01:15:22.003239Z", "func_name": "_send_single_request", "lineno": 1025}
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/admin "HTTP/1.1 307 Temporary Redirect"
+______ test_signed_nonadmin_or_malformed_roles_denied_without_db[claims0] ______
+tests/test_keycloak_contract.py:236: in test_signed_nonadmin_or_malformed_roles_denied_without_db
+    assert "token" not in _session(client)
+E   AssertionError: assert 'token' not in {'token': '[synthetic-jwt-redacted]'}
+E    +  where {'token': '[synthetic-jwt-redacted]'} = _session(<starlette.testclient.TestClient object at 0x10f8a7a90>)
+----------------------------- Captured stdout call -----------------------------
+{"event": "HTTP Request: GET http://testserver/admin/webhook-event/list \"HTTP/1.1 302 Found\"", "level": "info", "logger": "httpx", "timestamp": "2026-10-07T01:15:22.302466Z", "func_name": "_send_single_request", "lineno": 1025}
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/admin/webhook-event/list "HTTP/1.1 302 Found"
+______ test_signed_nonadmin_or_malformed_roles_denied_without_db[claims1] ______
+tests/test_keycloak_contract.py:236: in test_signed_nonadmin_or_malformed_roles_denied_without_db
+    assert "token" not in _session(client)
+E   AssertionError: assert 'token' not in {'token': '[synthetic-jwt-redacted]'}
+E    +  where {'token': '[synthetic-jwt-redacted]'} = _session(<starlette.testclient.TestClient object at 0x10fa87b90>)
+----------------------------- Captured stdout call -----------------------------
+{"event": "HTTP Request: GET http://testserver/admin/webhook-event/list \"HTTP/1.1 302 Found\"", "level": "info", "logger": "httpx", "timestamp": "2026-10-07T01:15:22.465878Z", "func_name": "_send_single_request", "lineno": 1025}
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/admin/webhook-event/list "HTTP/1.1 302 Found"
+______ test_signed_nonadmin_or_malformed_roles_denied_without_db[claims2] ______
+tests/test_keycloak_contract.py:236: in test_signed_nonadmin_or_malformed_roles_denied_without_db
+    assert "token" not in _session(client)
+E   AssertionError: assert 'token' not in {'token': '[synthetic-jwt-redacted]'}
+E    +  where {'token': '[synthetic-jwt-redacted]'} = _session(<starlette.testclient.TestClient object at 0x10f731250>)
+----------------------------- Captured stdout call -----------------------------
+{"event": "HTTP Request: GET http://testserver/admin/webhook-event/list \"HTTP/1.1 302 Found\"", "level": "info", "logger": "httpx", "timestamp": "2026-10-07T01:15:22.893978Z", "func_name": "_send_single_request", "lineno": 1025}
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/admin/webhook-event/list "HTTP/1.1 302 Found"
+______ test_signed_nonadmin_or_malformed_roles_denied_without_db[claims3] ______
+tests/test_keycloak_contract.py:236: in test_signed_nonadmin_or_malformed_roles_denied_without_db
+    assert "token" not in _session(client)
+E   AssertionError: assert 'token' not in {'token': '[synthetic-jwt-redacted]'}
+E    +  where {'token': '[synthetic-jwt-redacted]'} = _session(<starlette.testclient.TestClient object at 0x10fb03b50>)
+----------------------------- Captured stdout call -----------------------------
+{"event": "HTTP Request: GET http://testserver/admin/webhook-event/list \"HTTP/1.1 302 Found\"", "level": "info", "logger": "httpx", "timestamp": "2026-10-07T01:15:23.044200Z", "func_name": "_send_single_request", "lineno": 1025}
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/admin/webhook-event/list "HTTP/1.1 302 Found"
+_____ test_invalid_or_expired_signature_denied_without_db[wrong-signature] _____
+tests/test_keycloak_contract.py:254: in test_invalid_or_expired_signature_denied_without_db
+    assert "token" not in _session(client)
+E   AssertionError: assert 'token' not in {'token': '[synthetic-jwt-redacted]'}
+E    +  where {'token': '[synthetic-jwt-redacted]'} = _session(<starlette.testclient.TestClient object at 0x10f731290>)
+----------------------------- Captured stdout call -----------------------------
+{"event": "HTTP Request: GET http://testserver/admin/webhook-event/list \"HTTP/1.1 302 Found\"", "level": "info", "logger": "httpx", "timestamp": "2026-10-07T01:15:23.768155Z", "func_name": "_send_single_request", "lineno": 1025}
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/admin/webhook-event/list "HTTP/1.1 302 Found"
+_________ test_invalid_or_expired_signature_denied_without_db[expired] _________
+tests/test_keycloak_contract.py:254: in test_invalid_or_expired_signature_denied_without_db
+    assert "token" not in _session(client)
+E   AssertionError: assert 'token' not in {'token': '[synthetic-jwt-redacted]'}
+E    +  where {'token': '[synthetic-jwt-redacted]'} = _session(<starlette.testclient.TestClient object at 0x10faec7d0>)
+----------------------------- Captured stdout call -----------------------------
+{"event": "HTTP Request: GET http://testserver/admin/webhook-event/list \"HTTP/1.1 302 Found\"", "level": "info", "logger": "httpx", "timestamp": "2026-10-07T01:15:24.150502Z", "func_name": "_send_single_request", "lineno": 1025}
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/admin/webhook-event/list "HTTP/1.1 302 Found"
+=============================== warnings summary ===============================
+.venv/lib/python3.11/site-packages/fastapi/testclient.py:1
+  /Users/grinvi04/project/webhook-service/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_keycloak_contract.py::test_missing_mismatched_other_browser_and_expired_state_denied
+FAILED tests/test_keycloak_contract.py::test_signed_admin_role_allows_dashboard
+FAILED tests/test_keycloak_contract.py::test_signed_nonadmin_or_malformed_roles_denied_without_db[claims0]
+FAILED tests/test_keycloak_contract.py::test_signed_nonadmin_or_malformed_roles_denied_without_db[claims1]
+FAILED tests/test_keycloak_contract.py::test_signed_nonadmin_or_malformed_roles_denied_without_db[claims2]
+FAILED tests/test_keycloak_contract.py::test_signed_nonadmin_or_malformed_roles_denied_without_db[claims3]
+FAILED tests/test_keycloak_contract.py::test_invalid_or_expired_signature_denied_without_db[wrong-signature]
+FAILED tests/test_keycloak_contract.py::test_invalid_or_expired_signature_denied_without_db[expired]
+8 failed, 5 passed, 1 warning in 3.71s

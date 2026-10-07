@@ -1,6 +1,104 @@
 # 품질 리메디에이션 로드맵 — webhook-service
 
-> 상태: 제안(Proposed) · 작성: AI 감사(정독 기반) · 기준일: 2026-06
+> 2026-06 감사 원본(아래 §0–§6)을 보존한다. 현재 상태는 다음 재대조를 따른다.
+
+## 2026-10-07 Keycloak SDK 전환 수용 계약 (구현 전 고정)
+
+`python-keycloak==7.1.1`을 후보로 고정한다. [공식 PyPI](https://pypi.org/project/python-keycloak/)는
+이 판이 Python 3.11과 Keycloak 22.X를 지원한다고 명시한다. 설치된 SDK 7.1.1 원본에서
+`decode_token(token, validate=True, **kwargs)`는 `jwcrypto`의 JWK와 JWT 검사 옵션을 받는다.
+PyPI의 배포 상태 classifier는 `3 - Alpha`이므로 이 지원 표기를 안정성 보증으로 해석하지 않는다.
+기존 `options={...}`와 PEM 문자열을 넘기는 호출은 호환되지 않는다. 두 소비자(관리자 UI와
+Replay API)가 하나의 검증 함수를 사용하도록 하고, realm 공개키를 JWK로 변환한 뒤
+`algs=["RS256"]`, `leeway=0`, 만료 claim 필수 검사를 명시한다. 기존 audience 비검증
+정책은 유지하며 issuer/audience의 실제 외부 설정은 **미확인**으로 둔다.
+
+선행 RED와 최종 수용 범위: 설치된 SDK의 합성 HTTP Keycloak과 자체 RSA 키를 써서
+root URL(끝 `/` 유무)·realm/key/certs/token·코드 교환을 확인한다. 관리자 UI와 Replay
+API 모두 실제 서명된 미래 만료 admin 토큰을 허용하고 현재보다 10초·120초 지난 토큰,
+만료 claim 누락, 잘못된 서명·다른 키·HS256/none 알고리즘을 교환/DB 조회 전에 거부한다.
+`realm_access.roles`는 정확한 `admin` 문자열을 담은 목록만 허용한다. 기존 서명 세션과
+Redis의 300초 atomic state 회수·다른 브라우저/이전 쿠키 재사용/공급자 오류 차단도 유지한다.
+기존 시험을 건너뛰거나 거부 기대를 느슨하게 하지 않는다. 전체 런타임 의존성 감사와
+개발 도구 의존성 검사를 분리해 기록하고, 외부 Keycloak 연결은 실행하지 않는다.
+
+## 2026-10-07 현재 원본 재대조와 QA 범위
+
+상태: **로컬 기능·품질 검사 PASS, 7.1.1의 해석된 런타임·개발 의존성 보안 검사 PASS,
+시험 전용 실제 Keycloak 22 로그인/역할 검사 PASS, 원격 CI·리뷰·병합 미실행**.
+남은 행동은 운영 Keycloak 설정·issuer/audience 정책을 확인하고 이 브랜치의 PR에서
+CI/리뷰/required check를 확인하는 것이다. 시험용 realm의 성공을 운영 연동 완료로 확대하지 않는다.
+
+기준: `origin/develop` 83cd3989298636436ad1f26e734d0678f88d7440에서 시작한
+`fix/harness-qa-contract`. 아래의 '구현 확인'은 코드·검사 존재 판정이며, 이 브랜치의
+CI·리뷰·병합·배포 완료를 뜻하지 않는다.
+
+| 감사 항목 | 현재 원본과 남은 행동 |
+|---|---|
+| H1 | `tests/test_integration_webhooks.py`의 GitHub/Stripe 실서명 허용·거부와 `tests/test_unit_signatures.py` 확인. 이 브랜치 전체 pytest로 실행 판정. |
+| M1, L4 | `app/main.py`가 tenant 포함 Redis NX 예약을 큐 실패 때 해제하고, `webhook_events`에 고유제약이 있다. 기존 `tests/test_idempotency.py`는 삭제 mock만 보았으므로 실제 PostgreSQL·Redis·worker 재시도 회귀를 이 브랜치에 추가. |
+| M2 | `/health`가 비동기 DB 세션을 사용하고 `tests/test_health.py`가 유지 검사를 제공한다. |
+| M3, M5 | CI에 Ruff format/lint와 mypy 게이트가 있고 Celery `customer_id`는 `str`이다. `pyproject.toml`의 mypy는 `strict=true`가 아니므로 §2의 strict 요구는 **미완료**다. 이 작업에서 기존 타입 정책을 확대하지 않는다. |
+| M4, L3 | admin 하드삭제는 `can_delete=False`; 처리 태스크는 `PROCESSED`/`FAILED` 상태를 기록한다. `deleted_at`을 도입한 것은 아니다. |
+| M6 | GitHub 프로토콜의 시간 정보 부재와 24시간 Redis TTL의 리플레이 한계는 §6의 미결정 그대로다. |
+| M7 | `app/main.py`에 공통 에러 Envelope 핸들러가 있고 `tests/test_envelope.py`가 확인한다. |
+| L1, L2 | 현재 CI는 GitHub 웹훅 시크릿을 참조하지 않고 현재 `app/config.py`에는 과거 전역 시크릿 설정이 없다. 과거 파일·라인 근거는 현재 결함 근거로 재사용하지 않는다. |
+
+보안 감사에서 직접 고정 의존성의 `python-dotenv`, `Mako`, `SQLAdmin` 취약점이
+나왔다. [dotenv](https://github.com/theskumar/python-dotenv/security/advisories/GHSA-mf9w-mj56-hr94),
+[Mako](https://github.com/sqlalchemy/mako/security/advisories/GHSA-2h4p-vjrc-8xpq),
+[SQLAdmin 접근 제어](https://github.com/smithyhq/sqladmin/security/advisories/GHSA-54mc-gghv-4cfj)와
+[정렬 검증](https://github.com/smithyhq/sqladmin/security/advisories/GHSA-ccg5-9c8w-xh6v)의
+수정판으로 갱신했다. SQLAdmin 0.27.1은 Starlette 1.x를 요구하고 기존 FastAPI 0.117 및
+Instrumentator 7.1은 이를 허용하지 않아, 공식 호환 범위인 FastAPI 0.133.0,
+Starlette 1.3.1, Instrumentator 8.0.1 조합을 격리 resolver와 제품 회귀로 확인했다.
+이 변경은 API 응답·admin 로그인·메트릭 경계를 다시 검사해야 하는 스택 변경이다.
+
+### 이전 `eba4bfb` 후보의 의존성 실패 기록
+
+이전 후보의 해석된 런타임 의존성 전체 감사에는 **남은 경고**가 있었다: `python-keycloak==2.0.0`이
+`urllib3==1.26.20`과 `python-jose==3.5.0`(그 하위 `ecdsa==0.19.2`)을 끌어온다.
+Keycloak은 `app/main.py`, `app/admin.py`, `app/dependencies.py`의 토큰 검증과
+관리자 로그인에서 사용 중이다. `python-keycloak` 2.16.6은 resolver상 `urllib3` 제약을
+풀지만 현 로컬 환경에서 `pkg_resources` import로 pytest 수집이 실패했다.
+[공식 변경 기록](https://github.com/marcospereirampj/python-keycloak/blob/master/CHANGELOG.md)의
+3.9.1은 `python-jose`를 교체하지만 major 인증 라이브러리 변경이다. 당시에는 실 Keycloak
+연결·서명/만료/권한 회귀가 필요한 후속으로 남겼다. 그 후보의 시험은 자체 생성 RSA 키와
+합성 Keycloak HTTP 응답으로 설치된 SDK 경로의 서명·만료·역할을 확인했지만 외부
+Keycloak 서버와 issuer·audience 정책은 확인하지 않아 인증 연동 전체를 PASS로 판정하지 않는다.
+그 당시 `python-keycloak` 2.0.0의 `decode_token` 기본값은 `algorithms=["RS256"]`이고
+제품 호출부는 이를 넓히지 않는다. 따라서
+[python-jose 알고리즘 혼동](https://github.com/advisories/GHSA-3qf3-8w2g-rqmx)의
+"알고리즘을 제한하지 않는" 전제는 이 호출부에서는 관찰되지 않는다(코드 기반 추론).
+`ecdsa`의 [별도 경고](https://github.com/tlsfuzzer/python-ecdsa/security/advisories/GHSA-wj6h-64fc-37mp)도
+그 당시 RS256 검증 경로에서 사용 여부가 확인되지 않았다. 이 추론은 당시 라이브러리
+감사의 FAIL을 지우지 않았다. 7.1.1 전환은 `python-jose`·`ecdsa` 경로를 제거하고
+resolver가 `urllib3==2.8.0`을 선택했다. 새 전체 그래프 감사 결과는 QA 기록에 둔다.
+
+이번 변경의 필수 QA 판정자는 다음과 같다. 실 서비스는 이 시험 전용
+PostgreSQL 15(`127.0.0.1:55441`)과 Redis 7(`127.0.0.1:56381`)을 사용하며,
+CI에서는 격리된 서비스 DB/Redis를 사용한다. 별도 로컬 검증은 loopback 시험용
+Keycloak 22.0.5를 사용했고 운영 Keycloak·메일·운영 worker는 포함하지 않는다.
+
+| 요구·위험 | 조건과 기대 결과 | 관찰 경계 | 필수 |
+|---|---|---|---|
+| 실패 후 유실 방지 | 유효 GitHub 서명 요청의 첫 broker 게시 실패 → 500, 실제 Redis 예약키 없음·큐 0건 | API + Redis | 예 |
+| 같은 delivery 재시도 | 동일 요청 재시도 → 202, 예약키 1개·큐 1건; worker 처리 뒤 DB `PROCESSED` 1건 | API + Redis + 실제 worker + PostgreSQL | 예 |
+| 중복 억제 | 같은 delivery 세 번째 요청 → 중복 응답, 큐/DB 추가 0건 | API + Redis + PostgreSQL | 예 |
+| 유지 동작 | 실서명 허용·거부, 기존 멱등/DB 고유제약, 전체 pytest와 Ruff/mypy/Alembic 단일 head | 제품 검사 | 예 |
+| 로컬 훅 격리 | 주입한 시험 DB/Redis 주소로 pre-commit 전체 훅 PASS, 기존 훅의 5433 강제 주입은 실패 재현, 다른 DB 주소는 연결 전 거부 | 훅 + 시험 환경 경계 | 예 |
+| 실서비스 시험 진입 경계 | 관리자 DDL·큐 회귀 전에 공통 fixture가 환경 변수, 실제 DB engine, Redis URL, Celery broker 읽기/쓰기·result backend를 같은 `127.0.0.1` 격리 서비스로 확인; 다른 DB·broker·result·IPv6·호스트 접미사는 연결/게시 전에 거부 | fixture + 거부 회귀 | 예 |
+| libpq 우회·출력 경계 | `PGHOSTADDR`·`PGSERVICE`·`PGSERVICEFILE`·`PGSYSCONFDIR`의 존재를 DDL 전 거부하고, URL·engine·Celery 비교 실패는 인증정보를 포함하지 않는 메시지만 출력 | fixture + libpq 주입/합성 userinfo 회귀 | 예 |
+| dotenv 시험 경계 | `pytest.ini`가 `pytest-dotenv` 시작 단계 훅을 차단하고, pytest bootstrap이 앱 설정 최초 import 전에 Pydantic `_env_file=None`을 적용한다. 합성 dotenv 파일에서 플러그인 비활성·값 유입 없음·파일 읽기 호출 0을 확인 | 시작 단계 subprocess + bootstrap + 합성 파일 회귀 | 예 |
+| Keycloak SDK URL·관리자 코드 교환 | 설치된 `python-keycloak==7.1.1`에 서버 root URL(끝 `/` 유무)을 전달하면 실제 SDK의 realm/key/certs/token 요청이 단일 `/realms/{realm}`로 간다. SQLAdmin mount 앞에 등록된 GET 로그인·callback은 실제 URL을 사용하고 SDK `token(code, grant_type="authorization_code", redirect_uri)`로 교환한다. 코드 누락·공급자 오류는 새 토큰을 저장하지 않는다 | 합성 HTTP + TestClient 및 loopback Keycloak 22/Chrome 실제 코드 교환 | 예 |
+| 관리자 로그인 state·권한 | 로그인마다 암호학적 임의 state를 서명 세션과 기존 Redis에 300초 저장하고 callback에서 정확한 세션 일치·기한·원자적 GETDEL을 확인한다. 다른 브라우저·누락·불일치·만료·미래시각·이전 서명 쿠키 재사용은 교환 전 거부하며 Redis 실패도 닫힌다. 서명·만료가 유효한 `realm_access.roles` 목록의 정확한 `admin`만 관리자 UI 허용; 비관리자·형식 오류·서명 오류·만료는 세션을 지우고 목록 DB 질의 0. API Replay 역시 실제 SDK 서명 검증 후 정확한 admin 목록만 허용한다 | 합성 RSA·Keycloak HTTP + TestClient; 시험 전용 실제 Redis GETDEL 동시 두 소비자; 외부 Keycloak 없음 | 예 |
+| CI 게시 경계 | PR·develop push는 게시 job 조건 불충족, main push에서만 품질 job 성공 후 게시; 기존 `build-and-test` 이름 유지 | workflow 정적 검사 | 예 |
+| commitlint 신뢰 경계 | 기존 `commitlint.yml` 유지, 정본 `commitlint-trusted.yml` 파일 추가; 원격 required check 활성 여부 별도 확인 | 파일 비교 + GitHub 상태 | 파일 비교 예 / 원격 활성 미확인 |
+| 관리자/메트릭 호환 | 익명 AJAX lookup 로그인 이동, 허용 정렬 200·숨긴 `payload` 정렬 400, `/metrics` 200과 요청 계수 | 실제 HTTP + PostgreSQL | 예 |
+| 패키지 보안 | 런타임 전체 74개·개발 포함 전체 91개 해석 그래프 감사에서 취약점 0건. 이전 후보 15건 FAIL은 별도 과거 기록으로 유지 | `uv pip compile` 그래프 + `pip-audit --disable-pip --no-deps` 원문 | 예 |
+
+실행 기록은 [2026-10-07 QA 기록](../qa/2026-10-07/README.md)에 기준 SHA·실행 환경·
+명령·종료 코드·원문 로그와 함께 남긴다.
 
 ## §0 Context / Why
 
@@ -107,3 +205,24 @@ webhook-service(FastAPI/Python)는 같은 손·같은 패턴으로 만들어져 
 ---
 
 > 신규 부채는 harness-guard v0.7.0 게이트가 차단한다 — 이 문서는 **기존 부채 정리용**이다.
+
+## 2026-10-07 원격 전달 단계
+
+기존 로컬 후보 `2d082815`의 파일 트리를 보존하고, 미게시 커밋의 메시지 형식 오류를 해소하기 위해 원격 전달용 단일 커밋으로 묶었다. 기존 커밋은 `codex/evidence-webhook-2d08281`에 보존한다. 앱·시험·의존성·workflow 입력은 동일하며 기존 SDK 7.1.1 검증 원문은 당시 후보의 증거다. PR은 develop을 대상으로 기존 필수 `commitlint`를 유지한다. main/default trusted 검사 배치·필수 검사 전환·GHCR 게시·운영 배포는 이번 develop 인수의 완료 범위에 포함하지 않는다. 실제 원격 CI·리뷰·병합 결과는 전달 PR에서 확인하며 미실행을 PASS로 표시하지 않는다.
+
+원격 PR #71 첫 실행은 build/test 등 기존 검사 PASS지만 secret-scan이 QA SHA-256 두 건을 오탐하여 FAIL였다. 이 실패는 보존한다. 위 결정의 정확한 두 fingerprint와 동일 scanner 버전의 허용/거부 반증을 적용하고 새 후보의 원격 secret-scan까지 통과해야 develop 인수할 수 있다.
+
+
+## v1.5.0 릴리즈 인수 (2026-10-07, 준비 중)
+
+사용자는 main 릴리즈·GHCR 이미지 게시를 승인했다. 운영 배포·운영 DB 변경은 제외한다. develop 기준은 `c42142483fb1b95e88f6af5e16872c3c26f294e0`, 기존 main은 `b90519856bafe050c05d1f3d61b7674b01192a5d`다. main 고유 두 merge 이력은 소스 차이를 만들지 않으며 merge-tree 결과는 develop tree와 같다. Alembic versions diff도 없다. 이번 준비 변경은 API 버전·README 1.5.0과 이 진행 기록만이다.
+
+필수 인수: 같은 후보의 lint/format/mypy/pytest 및 원격 required CI, 고정 후보 독립 보안·DB·설정 검토, main 병합 SHA와 tag 일치, main push의 이미지 게시 성공 및 digest, develop 역병합, 관련 문서와 작업 공간 정리다. 기존 실 Keycloak 및 runtime/dev pin graph 감사 0 증거는 해당 인증·의존성 입력이 불변인 범위에서 재사용하며 버전 준비를 실 인증 재시험으로 쓰지 않는다. staging/운영 endpoint는 AGENTS에 정의되지 않고 운영 미배포이므로 GHCR 게시와 운영 health를 구분한다.
+
+현재 main PR·태그·이미지·역병합·trusted 이벤트 실제 실행/보호 전환은 미실행이다. trusted는 main에 배치한 뒤 후속 실제 develop PR에서 현재 head의 실행 성공을 확인하고, 기존 commitlint를 유지한 채 context를 먼저 추가·readback한 뒤 legacy 요구/자산을 정리한다. 이 준비 기록만으로 검사 활성화나 배포 완료를 판정하지 않는다.
+
+
+릴리즈 준비 환경 대조에서 `.env.example`의 REDIS_URL 누락을 발견했다. 실제 Settings 클래스와 예제를 읽은 첫 시험은 관리자 OAuth Redis가 컨테이너 localhost로 지정돼 FAIL이었으며, 명시 Redis 서비스 주소 뒤에는 PASS다. README의 전역 HMAC 키 안내도 실제 고객별 DB 설정과 맞추고 세션 서명 키·Redis 요구를 연결했다. 운영 환경·DB·provider 설정은 변경하지 않았다. 현재 develop PR #71 및 동일 SHA push CI는 PASS이며 과거 미실행 표현은 당시 후보 기록으로 보존하고 QA README 후속에 최신 상태를 연결한다.
+
+
+새 버전/환경 안내의 독립 검토에서 개발 Keycloak localhost 예제도 web 컨테이너의 서버 코드 교환과 브라우저 주소를 함께 만족하지 못함을 발견했다. 예제는 실 접속 주소가 필요한 placeholder로 바꾸고 README에 공통 hostname/issuer/callback 설정 및 admin 허용/거부 확인 조건을 명시했다. 내부 서비스명으로 브라우저 URL을 바꾸는 단순 처방이나 운영 제공자 설정을 임의 적용하지 않았다. 기존 번들 Compose가 인증까지 무설정 실행되는 구성이라고 주장하지 않으며 실제 환경 구성·운영 IdP는 별도 미확인이다. 시험 배지도 현재 110건과 맞췄다.

@@ -1,0 +1,5 @@
+/webhook-qa-20261007-postgres running=true ports={"5432/tcp":[{"HostIp":"127.0.0.1","HostPort":"55441"}]}
+/webhook-qa-20261007-redis running=true ports={"6379/tcp":[{"HostIp":"127.0.0.1","HostPort":"56381"}]}
+/webhook-qa-keycloak22-20261007 running=true ports={"8080/tcp":[{"HostIp":"127.0.0.1","HostPort":"58080"}]}
+COMMAND     PID     USER   FD   TYPE             DEVICE SIZE/OFF NODE NAME
+python3.1 64997 grinvi04    9u  IPv4 0xbc1f1808ecfb03dc      0t0  TCP 127.0.0.1:58081 (LISTEN)

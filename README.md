@@ -2,10 +2,10 @@
 
 [![CI](https://github.com/grinvi04/webhook-service/actions/workflows/ci.yml/badge.svg)](https://github.com/grinvi04/webhook-service/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.11+-blue.svg)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.117-green.svg)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.133-green.svg)
 ![License](https://img.shields.io/github/license/grinvi04/webhook-service)
-![Tests](https://img.shields.io/badge/tests-23%20passed-brightgreen)
-![Version](https://img.shields.io/badge/version-1.3.1-blue)
+![Tests](https://img.shields.io/badge/tests-110%20passed-brightgreen)
+![Version](https://img.shields.io/badge/version-1.5.0-blue)
 
 > **"위변조 차단·비동기 큐·자동 재시도를 갖춘 프로덕션 수준의 웹훅 수신 서비스."**
 
@@ -47,14 +47,14 @@ HMAC-SHA256 서명 검증, 비동기 큐 처리, 자동 재시도, Prometheus �
 
 | 역할 | 기술 |
 |---|---|
-| 웹 프레임워크 | FastAPI 0.117 |
+| 웹 프레임워크 | FastAPI 0.133 + Starlette 1.3 |
 | 비동기 작업 | Celery 5.5 + Redis 7 |
 | 데이터베이스 | PostgreSQL 15 + SQLAlchemy 2.0 |
 | DB 마이그레이션 | Alembic |
 | 인증 | Keycloak 22 (JWT, Replay API) |
 | 관리자 UI | SQLAdmin |
 | 모니터링 | Prometheus + Grafana |
-| 린팅 | ruff (line-length=88) |
+| 린팅 | ruff (line-length=100) |
 
 ## 🏗️ 아키텍처
 
@@ -106,10 +106,12 @@ cp .env.example .env
 | 변수 | 설명 | 예시 |
 |---|---|---|
 | `DATABASE_URL` | PostgreSQL 연결 URL | `postgresql+psycopg2://user:password@db:5432/webhook_db` |
+| `REDIS_URL` | 관리자 OAuth state 저장 Redis URL | `redis://redis:6379/0` |
 | `CELERY_BROKER_URL` | Redis 브로커 URL | `redis://redis:6379/0` |
 | `CELERY_RESULT_BACKEND` | Redis 결과 저장소 URL | `redis://redis:6379/0` |
-| `GITHUB_WEBHOOK_SECRET` | GitHub 웹훅 HMAC 시크릿 | `my-super-secret-key` |
-| `STRIPE_WEBHOOK_SECRET` | Stripe 웹훅 서명 시크릿 | `whsec_...` |
+| `SESSION_SECRET` | 관리자 세션 서명 키 | `openssl rand -hex 32`로 생성 |
+
+Docker Compose에서는 `REDIS_URL`도 별도 `redis` 서비스로 지정해야 합니다. 호스트에서 직접 실행할 때는 호스트에 공개한 시험/개발 Redis 주소를 사용하세요. 웹훅 서명 키는 전역 환경변수가 아니라 고객별 DB `customers.webhook_secret`에서 관리합니다.
 
 **선택 (PostgreSQL Docker용):**
 
@@ -119,21 +121,25 @@ cp .env.example .env
 | `POSTGRES_USER` | PostgreSQL 사용자 |
 | `POSTGRES_PASSWORD` | PostgreSQL 비밀번호 |
 
-**선택 (관리자 계정):**
+**기존 호환 설정 (관리자 로그인은 Keycloak과 admin 역할 사용):**
 
 | 변수 | 설명 |
 |---|---|
 | `ADMIN_USERNAME` | 관리자 UI 사용자명 |
 | `ADMIN_PASSWORD` | 관리자 UI 비밀번호 |
 
-**선택 (Keycloak — Replay API 사용 시 필요):**
+**필수 (Keycloak — 관리자 로그인 및 Replay API):**
 
 | 변수 | 기본값 | 설명 |
 |---|---|---|
-| `KEYCLOAK_URL` | `http://localhost:8080` | Keycloak 서버 URL |
+| `KEYCLOAK_URL` | 실제 공통 접속 URL로 설정 | 브라우저와 web 컨테이너에서 같은 IdP에 접속하는 URL |
 | `KEYCLOAK_REALM` | `webhook-service` | Keycloak 렐름명 |
 | `KEYCLOAK_CLIENT_ID` | `webhook-admin-client` | Keycloak 클라이언트 ID |
 | `KEYCLOAK_CLIENT_SECRET` | (없음) | Keycloak 클라이언트 시크릿 |
+
+관리자 인증을 사용할 때는 `.env.example`의 `keycloak.example.invalid`를 실제 IdP 주소로 바꾸세요. 컨테이너의 `localhost`는 web 자신을 가리키고 `keycloak:8080`은 브라우저에서 접근할 수 없으므로 둘을 대체값으로 쓰지 않습니다. 두 위치에서 접속 가능한 호스트 이름과 포트, Keycloak의 hostname/issuer 및 클라이언트 callback URL을 함께 맞춰야 합니다.
+
+개발 Compose의 번들 Keycloak은 localhost hostname 예제입니다. 컨테이너 관리자 로그인에 그대로 재사용하지 말고 위 공통 주소와 Keycloak hostname 설정을 맞춘 뒤 브라우저 로그인부터 서버의 코드 교환·admin 허용/거부까지 확인하세요. `docker-compose.prod.yml`에는 Keycloak 서비스가 없으므로 별도의 IdP 연결이 필요합니다. 실제 제공자·redirect·issuer/audience·키 회전과 운영 배포는 이 릴리즈의 이미지 게시 검증에 포함되지 않습니다.
 
 ### 2. Docker로 실행 (권장)
 
@@ -197,14 +203,24 @@ uvicorn app.main:app --reload
 
 ### 단위·통합 테스트 (pytest)
 
+로컬에서는 별도 PostgreSQL 15(`127.0.0.1:55441/webhook_qa`)와 Redis 7(`127.0.0.1:56381/0`)를 준비하고 `WEBHOOK_QA_DATABASE_URL`에 시험 DB URL을 설정하세요. 커밋 전에는 아래의 `DATABASE_URL`·`REDIS_URL`·Celery URL을 셸에 export해 pre-commit의 pytest 훅에도 전달하세요. `PGHOSTADDR`·`PGSERVICE`·`PGSERVICEFILE`·`PGSYSCONFDIR`은 시험 연결을 바꿀 수 있으므로 unset 상태여야 합니다.
+
+`pytest.ini`는 설치된 `pytest-dotenv` 플러그인의 시작 단계 로딩을 차단하고, 시험 bootstrap은 앱 설정을 가져오기 전에 Pydantic dotenv 파일 로딩을 비활성화합니다. 시험에 필요한 값은 위 환경 변수로 명시해야 하며, 제품의 `.env` 파일에 의존하지 않습니다.
+
 ```bash
 # macOS (DYLD_LIBRARY_PATH 필요)
 DYLD_LIBRARY_PATH=/opt/homebrew/opt/expat/lib \
-  DATABASE_URL=postgresql+psycopg2://user:password@localhost:5433/webhook_db \
+  DATABASE_URL="$WEBHOOK_QA_DATABASE_URL" \
+  REDIS_URL=redis://127.0.0.1:56381/0 \
+  CELERY_BROKER_URL=redis://127.0.0.1:56381/0 \
+  CELERY_RESULT_BACKEND=redis://127.0.0.1:56381/0 \
   .venv/bin/pytest tests/ -v
 
-# Linux / CI
-DATABASE_URL=postgresql+psycopg2://user:password@localhost:5432/webhook_db \
+# GitHub Actions (GITHUB_ACTIONS=true)
+DATABASE_URL=postgresql+psycopg2://postgres:postgres@127.0.0.1:5432/test_db \
+  REDIS_URL=redis://127.0.0.1:6379/0 \
+  CELERY_BROKER_URL=redis://127.0.0.1:6379/0 \
+  CELERY_RESULT_BACKEND=redis://127.0.0.1:6379/0 \
   .venv/bin/pytest tests/ -v
 ```
 

@@ -1,0 +1,66 @@
+# PR code is data only. Workflow and validator come from the trusted default-branch SHA.
+name: commitlint-trusted
+
+on:
+  pull_request_target:
+    branches: [main, develop]
+    types: [opened, synchronize, reopened, edited]
+
+permissions:
+  contents: read
+
+jobs:
+  commitlint-trusted:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: 신뢰 원본으로 PR 커밋 metadata 검사
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          HEAD_REF: ${{ github.head_ref }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          READ_TOKEN: ${{ github.token }}
+        run: |
+          if ! [[ "$PR_NUMBER" =~ ^[1-9][0-9]*$ && "$BASE_SHA" =~ ^[0-9a-f]{40}$ && "$HEAD_SHA" =~ ^[0-9a-f]{40}$ ]] \
+            || ! [[ "$BASE_REF" = main || "$BASE_REF" = develop ]]; then
+            echo "잘못된 PR metadata입니다." >&2
+            exit 1
+          fi
+          # Authentication exists only in each read-only fetch process, not Git config or Node.
+          FETCH_AUTH="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$READ_TOKEN" | base64 | tr -d '\n')"
+          unset READ_TOKEN
+          fetch_objects() {
+            GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=http.extraheader GIT_CONFIG_VALUE_0="$FETCH_AUTH" \
+              git fetch --no-tags origin "$@"
+          }
+          fetch_objects "refs/pull/$PR_NUMBER/head"
+          if [ "$(git rev-parse FETCH_HEAD)" != "$HEAD_SHA" ]; then
+            echo "PR head가 변경되었습니다. 최신 이벤트의 검사가 필요합니다." >&2
+            exit 1
+          fi
+          fetch_objects "$BASE_SHA"
+          if [ "$BASE_REF" = main ]; then
+            fetch_objects develop
+            DEVELOP_SHA="$(git rev-parse FETCH_HEAD)"
+            unset FETCH_AUTH
+            node scripts/check-commit-message.cjs --range "$BASE_SHA..$HEAD_SHA" --exclude "$DEVELOP_SHA"
+          elif [[ "$HEAD_REF" == sync/backmerge-* ]]; then
+            fetch_objects main
+            MAIN_SHA="$(git rev-parse FETCH_HEAD)"
+            unset FETCH_AUTH
+            BACKMERGE_COMMITS="$(git rev-list "$BASE_SHA..$HEAD_SHA" "^$MAIN_SHA" --)"
+            if [ -z "$BACKMERGE_COMMITS" ]; then
+              echo "main에 없는 backmerge commit이 없어 검사를 마칩니다."
+            else
+              node scripts/check-commit-message.cjs --range "$BASE_SHA..$HEAD_SHA" --exclude "$MAIN_SHA"
+            fi
+          else
+            unset FETCH_AUTH
+            node scripts/check-commit-message.cjs --range "$BASE_SHA..$HEAD_SHA"
+          fi

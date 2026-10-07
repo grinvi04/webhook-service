@@ -1,0 +1,12 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.11.15, pytest-9.0.3, pluggy-1.6.0 -- /Users/grinvi04/project/webhook-service/.venv/bin/python3.11
+cachedir: .pytest_cache
+rootdir: /Users/grinvi04/project/webhook-service
+configfile: pytest.ini
+plugins: mock-3.15.1, asyncio-1.4.0, dotenv-0.5.2, anyio-4.13.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 1 item
+
+tests/test_qa_isolation.py::test_test_settings_bootstrap_ignores_synthetic_dotenv PASSED [100%]
+
+============================== 1 passed in 0.31s ===============================

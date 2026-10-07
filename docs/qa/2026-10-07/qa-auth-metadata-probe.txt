@@ -1,0 +1,3 @@
+dedicated QA postgres metadata USER/PASSWORD/DB accepted by direct driver on 127.0.0.1:55441
+first commit hook used wrong assumed USER=postgres; actual metadata USER was not printed
+postgres state=exited

@@ -1,0 +1,126 @@
+FFFFFFFEFE..F                                                            [100%]
+==================================== ERRORS ====================================
+_ ERROR at teardown of test_effective_celery_destination_must_match_settings[broker_url] _
+.venv/lib/python3.11/site-packages/pytest_mock/plugin.py:469: in _mocker
+    result.stopall()
+.venv/lib/python3.11/site-packages/pytest_mock/plugin.py:151: in stopall
+    self._mock_cache.clear()
+.venv/lib/python3.11/site-packages/pytest_mock/plugin.py:73: in clear
+    mock_item.patch.stop()
+/opt/homebrew/Cellar/python@3.11/3.11.15_1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/unittest/mock.py:1930: in stop
+    return self.__exit__(None, None, None)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.11/3.11.15_1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/unittest/mock.py:1911: in __exit__
+    self._unpatch_dict()
+/opt/homebrew/Cellar/python@3.11/3.11.15_1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/unittest/mock.py:1902: in _unpatch_dict
+    in_dict.update(original)
+.venv/lib/python3.11/site-packages/celery/utils/collections.py:301: in update
+    result = self.changes.update(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/celery/utils/collections.py:389: in __getitem__
+    tuple(f(key) for f in self._keys) if self._keys else ()):
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/celery/utils/collections.py:389: in <genexpr>
+    tuple(f(key) for f in self._keys) if self._keys else ()):
+          ^^^^^^
+E   TypeError: 'str' object is not callable
+_ ERROR at teardown of test_effective_celery_destination_must_match_settings[result_backend] _
+.venv/lib/python3.11/site-packages/pytest_mock/plugin.py:469: in _mocker
+    result.stopall()
+.venv/lib/python3.11/site-packages/pytest_mock/plugin.py:151: in stopall
+    self._mock_cache.clear()
+.venv/lib/python3.11/site-packages/pytest_mock/plugin.py:73: in clear
+    mock_item.patch.stop()
+/opt/homebrew/Cellar/python@3.11/3.11.15_1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/unittest/mock.py:1930: in stop
+    return self.__exit__(None, None, None)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.11/3.11.15_1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/unittest/mock.py:1911: in __exit__
+    self._unpatch_dict()
+/opt/homebrew/Cellar/python@3.11/3.11.15_1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/unittest/mock.py:1902: in _unpatch_dict
+    in_dict.update(original)
+.venv/lib/python3.11/site-packages/celery/utils/collections.py:301: in update
+    result = self.changes.update(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/celery/utils/collections.py:389: in __getitem__
+    tuple(f(key) for f in self._keys) if self._keys else ()):
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/celery/utils/collections.py:389: in <genexpr>
+    tuple(f(key) for f in self._keys) if self._keys else ()):
+          ^^^^^^
+E   TypeError: 'str' object is not callable
+=================================== FAILURES ===================================
+_ test_unsafe_service_destination_blocks_before_io[database_url-postgresql+psycopg2://qa:qa@127.0.0.1:5433/webhook_db] _
+tests/test_qa_isolation.py:31: in test_unsafe_service_destination_blocks_before_io
+    with (
+E   TypeError: 'str' object does not support the context manager protocol
+_ test_unsafe_service_destination_blocks_before_io[database_url-postgresql+psycopg2://qa:qa@[::1]:55441/webhook_qa] _
+tests/test_qa_isolation.py:31: in test_unsafe_service_destination_blocks_before_io
+    with (
+E   TypeError: 'str' object does not support the context manager protocol
+_ test_unsafe_service_destination_blocks_before_io[database_url-postgresql+psycopg2://qa:qa@127.0.0.1.example:55441/webhook_qa] _
+tests/test_qa_isolation.py:31: in test_unsafe_service_destination_blocks_before_io
+    with (
+E   TypeError: 'str' object does not support the context manager protocol
+_ test_unsafe_service_destination_blocks_before_io[redis_url-redis://127.0.0.1:56381/1] _
+tests/test_qa_isolation.py:31: in test_unsafe_service_destination_blocks_before_io
+    with (
+E   TypeError: 'str' object does not support the context manager protocol
+_ test_unsafe_service_destination_blocks_before_io[celery_broker_url-redis://127.0.0.1:56382/0] _
+tests/test_qa_isolation.py:31: in test_unsafe_service_destination_blocks_before_io
+    with (
+E   TypeError: 'str' object does not support the context manager protocol
+_ test_unsafe_service_destination_blocks_before_io[celery_result_backend-redis://127.0.0.1:56381/1] _
+tests/test_qa_isolation.py:31: in test_unsafe_service_destination_blocks_before_io
+    with (
+E   TypeError: 'str' object does not support the context manager protocol
+______ test_effective_celery_destination_must_match_settings[broker_url] _______
+tests/test_qa_isolation.py:45: in test_effective_celery_destination_must_match_settings
+    with pytest.raises(AssertionError):
+E   Failed: DID NOT RAISE <class 'AssertionError'>
+____ test_effective_celery_destination_must_match_settings[result_backend] _____
+tests/test_qa_isolation.py:45: in test_effective_celery_destination_must_match_settings
+    with pytest.raises(AssertionError):
+E   Failed: DID NOT RAISE <class 'AssertionError'>
+__________ test_queue_failure_recovery_with_postgres_redis_and_worker __________
+tests/test_idempotency.py:153: in test_queue_failure_recovery_with_postgres_redis_and_worker
+    assert redis_client.llen("high_priority") == 1
+E   AssertionError: assert 0 == 1
+E    +  where 0 = llen('high_priority')
+E    +    where llen = <redis.client.Redis(<redis.connection.ConnectionPool(<redis.connection.Connection(host=127.0.0.1,port=56381,db=0)>)>)>.llen
+----------------------------- Captured stdout call -----------------------------
+{"event": "Application startup.", "level": "info", "logger": "app.main", "timestamp": "2026-10-07T00:33:44.225484Z", "func_name": "lifespan", "lineno": 55}
+{"event": "Received github webhook for tenant qa-b3830ccca6744f3aad65e130e24fe248. Queuing for processing.", "level": "info", "logger": "app.main", "timestamp": "2026-10-07T00:33:44.296017Z", "func_name": "receive_webhook", "lineno": 217}
+{"event": "HTTP Request: POST http://testserver/webhooks/qa-b3830ccca6744f3aad65e130e24fe248/github \"HTTP/1.1 500 Internal Server Error\"", "level": "info", "logger": "httpx", "timestamp": "2026-10-07T00:33:44.298582Z", "func_name": "_send_single_request", "lineno": 1025}
+{"event": "Received github webhook for tenant qa-b3830ccca6744f3aad65e130e24fe248. Queuing for processing.", "level": "info", "logger": "app.main", "timestamp": "2026-10-07T00:33:44.309555Z", "func_name": "receive_webhook", "lineno": 217}
+{"event": "HTTP Request: POST http://testserver/webhooks/qa-b3830ccca6744f3aad65e130e24fe248/github \"HTTP/1.1 202 Accepted\"", "level": "info", "logger": "httpx", "timestamp": "2026-10-07T00:33:44.311935Z", "func_name": "_send_single_request", "lineno": 1025}
+{"event": "Application shutdown.", "level": "info", "logger": "app.main", "timestamp": "2026-10-07T00:33:44.314217Z", "func_name": "lifespan", "lineno": 59}
+------------------------------ Captured log call -------------------------------
+INFO     app.main:main.py:55 Application startup.
+INFO     app.main:main.py:217 Received github webhook for tenant qa-b3830ccca6744f3aad65e130e24fe248. Queuing for processing.
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/webhooks/qa-b3830ccca6744f3aad65e130e24fe248/github "HTTP/1.1 500 Internal Server Error"
+INFO     app.main:main.py:217 Received github webhook for tenant qa-b3830ccca6744f3aad65e130e24fe248. Queuing for processing.
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/webhooks/qa-b3830ccca6744f3aad65e130e24fe248/github "HTTP/1.1 202 Accepted"
+INFO     app.main:main.py:59 Application shutdown.
+=============================== warnings summary ===============================
+.venv/lib/python3.11/site-packages/fastapi/testclient.py:1
+  /Users/grinvi04/project/webhook-service/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_idempotency.py::test_queue_failure_recovery_with_postgres_redis_and_worker
+  /Users/grinvi04/project/webhook-service/app/main.py:58: DeprecationWarning: Call to deprecated close. (Use aclose() instead) -- Deprecated since version 5.0.1.
+    await app.state.redis.close()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_qa_isolation.py::test_unsafe_service_destination_blocks_before_io[database_url-postgresql+psycopg2://qa:qa@127.0.0.1:5433/webhook_db]
+FAILED tests/test_qa_isolation.py::test_unsafe_service_destination_blocks_before_io[database_url-postgresql+psycopg2://qa:qa@[::1]:55441/webhook_qa]
+FAILED tests/test_qa_isolation.py::test_unsafe_service_destination_blocks_before_io[database_url-postgresql+psycopg2://qa:qa@127.0.0.1.example:55441/webhook_qa]
+FAILED tests/test_qa_isolation.py::test_unsafe_service_destination_blocks_before_io[redis_url-redis://127.0.0.1:56381/1]
+FAILED tests/test_qa_isolation.py::test_unsafe_service_destination_blocks_before_io[celery_broker_url-redis://127.0.0.1:56382/0]
+FAILED tests/test_qa_isolation.py::test_unsafe_service_destination_blocks_before_io[celery_result_backend-redis://127.0.0.1:56381/1]
+FAILED tests/test_qa_isolation.py::test_effective_celery_destination_must_match_settings[broker_url]
+FAILED tests/test_qa_isolation.py::test_effective_celery_destination_must_match_settings[result_backend]
+FAILED tests/test_idempotency.py::test_queue_failure_recovery_with_postgres_redis_and_worker
+ERROR tests/test_qa_isolation.py::test_effective_celery_destination_must_match_settings[broker_url]
+ERROR tests/test_qa_isolation.py::test_effective_celery_destination_must_match_settings[result_backend]
+9 failed, 2 passed, 2 warnings, 2 errors in 2.14s

@@ -1,0 +1,59 @@
+ERROR: found no collectors for /Users/grinvi04/project/webhook-service/tests/test_qa_isolation.py::test_pytest_startup_never_loads_a_dotenv_file
+
+
+==================================== ERRORS ====================================
+_________________ ERROR collecting tests/test_qa_isolation.py __________________
+tests/test_qa_isolation.py:17: in <module>
+    import app.database
+app/database.py:5: in <module>
+    from .config import settings
+app/config.py:25: in <module>
+    settings = Settings()
+               ^^^^^^^^^^
+tests/conftest.py:22: in _qa_settings_init
+    _base_settings_init(self, *args, **kwargs)
+.venv/lib/python3.11/site-packages/pydantic_settings/main.py:188: in __init__
+    super().__init__(
+E   pydantic_core._pydantic_core.ValidationError: 3 validation errors for Settings
+E   database_url
+E     Field required [type=missing, input_value={'session_secret': 'test-secret-key'}, input_type=dict]
+E       For further information visit https://errors.pydantic.dev/2.11/v/missing
+E   celery_broker_url
+E     Field required [type=missing, input_value={'session_secret': 'test-secret-key'}, input_type=dict]
+E       For further information visit https://errors.pydantic.dev/2.11/v/missing
+E   celery_result_backend
+E     Field required [type=missing, input_value={'session_secret': 'test-secret-key'}, input_type=dict]
+E       For further information visit https://errors.pydantic.dev/2.11/v/missing
+_________________ ERROR collecting tests/test_qa_isolation.py __________________
+tests/test_qa_isolation.py:17: in <module>
+    import app.database
+app/database.py:5: in <module>
+    from .config import settings
+app/config.py:25: in <module>
+    settings = Settings()
+               ^^^^^^^^^^
+tests/conftest.py:22: in _qa_settings_init
+    _base_settings_init(self, *args, **kwargs)
+.venv/lib/python3.11/site-packages/pydantic_settings/main.py:188: in __init__
+    super().__init__(
+E   pydantic_core._pydantic_core.ValidationError: 3 validation errors for Settings
+E   database_url
+E     Field required [type=missing, input_value={'session_secret': 'test-secret-key'}, input_type=dict]
+E       For further information visit https://errors.pydantic.dev/2.11/v/missing
+E   celery_broker_url
+E     Field required [type=missing, input_value={'session_secret': 'test-secret-key'}, input_type=dict]
+E       For further information visit https://errors.pydantic.dev/2.11/v/missing
+E   celery_result_backend
+E     Field required [type=missing, input_value={'session_secret': 'test-secret-key'}, input_type=dict]
+E       For further information visit https://errors.pydantic.dev/2.11/v/missing
+=============================== warnings summary ===============================
+.venv/lib/python3.11/site-packages/_pytest/config/__init__.py:1434
+  /Users/grinvi04/project/webhook-service/.venv/lib/python3.11/site-packages/_pytest/config/__init__.py:1434: PytestConfigWarning: Unknown config option: env_files
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+ERROR tests/test_qa_isolation.py - pydantic_core._pydantic_core.ValidationErr...
+ERROR tests/test_qa_isolation.py - pydantic_core._pydantic_core.ValidationErr...
+1 warning, 2 errors in 0.20s

@@ -197,17 +197,14 @@ async def test_auth_invalid_token_raises_401():
 async def test_auth_valid_token_returns_user_info():
     expected = {"sub": "user-123", "email": "user@example.com"}
     mock_kc = MagicMock()
-    mock_kc.decode_token.return_value = expected
     state = MagicMock()
     state.keycloak_openid = mock_kc
     req = _make_request({"Authorization": "Bearer validtoken"}, app_state=state)
 
-    with patch(_KC_PATCH, new=AsyncMock(return_value="pubkey")):
+    with patch(
+        "app.dependencies._decode_keycloak_token", new=AsyncMock(return_value=expected)
+    ) as decode:
         result = await get_current_user(req)
 
     assert result == expected
-    mock_kc.decode_token.assert_called_once_with(
-        "validtoken",
-        key="pubkey",
-        options={"verify_signature": True, "verify_aud": False, "exp": True},
-    )
+    decode.assert_awaited_once_with(mock_kc, "validtoken")

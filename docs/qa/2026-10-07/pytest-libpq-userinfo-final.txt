@@ -1,0 +1,28 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.11.15, pytest-9.0.3, pluggy-1.6.0 -- /Users/grinvi04/project/webhook-service/.venv/bin/python3.11
+cachedir: .pytest_cache
+rootdir: /Users/grinvi04/project/webhook-service
+configfile: pytest.ini
+plugins: mock-3.15.1, asyncio-1.4.0, dotenv-0.5.2, anyio-4.13.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 17 items
+
+tests/test_qa_isolation.py::test_unsafe_service_destination_blocks_before_io[db-port] PASSED [  5%]
+tests/test_qa_isolation.py::test_unsafe_service_destination_blocks_before_io[db-ipv6] PASSED [ 11%]
+tests/test_qa_isolation.py::test_unsafe_service_destination_blocks_before_io[db-host-suffix] PASSED [ 17%]
+tests/test_qa_isolation.py::test_unsafe_service_destination_blocks_before_io[redis-db] PASSED [ 23%]
+tests/test_qa_isolation.py::test_unsafe_service_destination_blocks_before_io[broker-port] PASSED [ 29%]
+tests/test_qa_isolation.py::test_unsafe_service_destination_blocks_before_io[result-db] PASSED [ 35%]
+tests/test_qa_isolation.py::test_celery_override_cannot_redirect_broker[CELERY_BROKER_READ_URL] PASSED [ 41%]
+tests/test_qa_isolation.py::test_celery_override_cannot_redirect_broker[CELERY_BROKER_WRITE_URL] PASSED [ 47%]
+tests/test_qa_isolation.py::test_env_file_alone_cannot_supply_live_service_target PASSED [ 52%]
+tests/test_qa_isolation.py::test_libpq_redirect_environment_blocks_before_io[PGHOSTADDR-127.0.0.2] PASSED [ 58%]
+tests/test_qa_isolation.py::test_libpq_redirect_environment_blocks_before_io[PGSERVICE-qa-test-service] PASSED [ 64%]
+tests/test_qa_isolation.py::test_libpq_redirect_environment_blocks_before_io[PGSERVICEFILE-/tmp/qa-test-service.conf] PASSED [ 70%]
+tests/test_qa_isolation.py::test_libpq_redirect_environment_blocks_before_io[PGSYSCONFDIR-/tmp/qa-test-system] PASSED [ 76%]
+tests/test_qa_isolation.py::test_rejected_userinfo_is_absent_from_pytest_failure[environment] PASSED [ 82%]
+tests/test_qa_isolation.py::test_rejected_userinfo_is_absent_from_pytest_failure[celery_override] PASSED [ 88%]
+tests/test_qa_isolation.py::test_rejected_userinfo_is_absent_from_pytest_failure[engine] PASSED [ 94%]
+tests/test_qa_isolation.py::test_failure_renderer_would_expose_an_unsafe_url_comparison PASSED [100%]
+
+============================== 17 passed in 0.59s ==============================

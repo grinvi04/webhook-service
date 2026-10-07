@@ -1,0 +1,40 @@
+# destructive-ddl — 마이그레이션 SQL의 비가역 데이터-손실 DDL 정적 게이트.
+# 배경: DROP TABLE·TRUNCATE·DROP COLUMN 같은 파괴 DDL은 CI(빈 DB)는 통과하고 운영(기존 데이터)에서만
+# 비가역 손실을 낸다. 이 게이트가 scripts/check-destructive-ddl.mjs로 마이그레이션 *.sql 내용을 정적
+# 차단한다(정당한 2단계 배포는 '-- migration-safety: destructive-ok' 승인마커로 통과). 단일 출처: docs/db-standards.md
+# 셋업: new-repo.sh가 이 파일과 scripts/check-destructive-ddl.mjs를 복사하고 'destructive-ddl'을 required check에 등록한다.
+# 트리거 패턴: migration-safety.yml과 동일하게 "항상 트리거 + 내부 skip" — on.paths 필터를 두지 않는다.
+#   (이유) required check + on.paths 필터를 함께 쓰면, 마이그레이션을 안 건드린 PR에서는 워크플로가
+#   아예 실행되지 않아 check-run이 보고되지 않고 머지가 영구 pending으로 막힌다. 그래서 항상 실행하고,
+#   스크립트가 마이그레이션 *.sql이 없으면 즉시 exit 0으로 self-skip한다(비용 무시 수준).
+#   stack-agnostic — Flyway(db/migration)·Prisma(prisma/migrations)·Supabase(supabase/migrations) 공통.
+#   (Alembic .py DDL은 2번째 스텝 check-alembic-destructive-ddl.mjs가 본다 — upgrade() 파괴 op 차단,
+#   지문 없으면 self-skip. 다중 head 순서는 alembic-heads.yml 별도 소관.)
+#   (ActiveRecord db/migrate/*.rb DDL은 3번째 스텝 check-activerecord-destructive-ddl.mjs가 본다 —
+#   def change/up의 drop_table·remove_column·execute raw DROP 차단, 지문 없으면 self-skip.)
+name: destructive-ddl
+
+on:
+  pull_request:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+
+jobs:
+  destructive-ddl:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+      # 무의존 node 스크립트 — 루트에서 마이그레이션 디렉터리 하위 *.sql을 탐색해 검사한다.
+      - name: Check destructive DDL (SQL)
+        run: node scripts/check-destructive-ddl.mjs
+      # Alembic .py 축 — upgrade() 파괴 op(op.drop_table/column·op.execute DROP) 차단. 지문 없으면 self-skip.
+      - name: Check destructive DDL (Alembic .py)
+        run: node scripts/check-alembic-destructive-ddl.mjs
+      # ActiveRecord .rb 축 — def change/up 파괴 op(drop_table·remove_column·execute raw DROP) 차단. 지문 없으면 self-skip.
+      - name: Check destructive DDL (ActiveRecord .rb)
+        run: node scripts/check-activerecord-destructive-ddl.mjs

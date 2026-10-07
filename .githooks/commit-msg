@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if ! command -v node >/dev/null 2>&1; then
+  echo "경고: Node.js가 없어 로컬 커밋 메시지 검사를 건너뜁니다. PR의 CI commitlint가 동일 규칙을 검사합니다." >&2
+  exit 0
+fi
+
+ROOT="$(git rev-parse --show-toplevel)"
+ARGS=(--stdin)
+GIT_DIR="$(git rev-parse --git-dir)"
+if [ -f "$GIT_DIR/MERGE_HEAD" ]; then
+  ARGS+=(--allow-git-generated)
+fi
+git stripspace --strip-comments < "$1" \
+  | node "$ROOT/scripts/check-commit-message.cjs" "${ARGS[@]}"
