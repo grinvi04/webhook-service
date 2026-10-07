@@ -213,16 +213,25 @@ webhook-service(FastAPI/Python)는 같은 손·같은 패턴으로 만들어져 
 원격 PR #71 첫 실행은 build/test 등 기존 검사 PASS지만 secret-scan이 QA SHA-256 두 건을 오탐하여 FAIL였다. 이 실패는 보존한다. 위 결정의 정확한 두 fingerprint와 동일 scanner 버전의 허용/거부 반증을 적용하고 새 후보의 원격 secret-scan까지 통과해야 develop 인수할 수 있다.
 
 
-## v1.5.0 릴리즈 인수 (2026-10-07, 준비 중)
+## v1.5.0 릴리즈 인수 (2026-10-07)
 
 사용자는 main 릴리즈·GHCR 이미지 게시를 승인했다. 운영 배포·운영 DB 변경은 제외한다. develop 기준은 `c42142483fb1b95e88f6af5e16872c3c26f294e0`, 기존 main은 `b90519856bafe050c05d1f3d61b7674b01192a5d`다. main 고유 두 merge 이력은 소스 차이를 만들지 않으며 merge-tree 결과는 develop tree와 같다. Alembic versions diff도 없다. 이번 준비 변경은 API 버전·README 1.5.0과 이 진행 기록만이다.
 
 필수 인수: 같은 후보의 lint/format/mypy/pytest 및 원격 required CI, 고정 후보 독립 보안·DB·설정 검토, main 병합 SHA와 tag 일치, main push의 이미지 게시 성공 및 digest, develop 역병합, 관련 문서와 작업 공간 정리다. 기존 실 Keycloak 및 runtime/dev pin graph 감사 0 증거는 해당 인증·의존성 입력이 불변인 범위에서 재사용하며 버전 준비를 실 인증 재시험으로 쓰지 않는다. staging/운영 endpoint는 AGENTS에 정의되지 않고 운영 미배포이므로 GHCR 게시와 운영 health를 구분한다.
 
-현재 main PR·태그·이미지·역병합·trusted 이벤트 실제 실행/보호 전환은 미실행이다. trusted는 main에 배치한 뒤 후속 실제 develop PR에서 현재 head의 실행 성공을 확인하고, 기존 commitlint를 유지한 채 context를 먼저 추가·readback한 뒤 legacy 요구/자산을 정리한다. 이 준비 기록만으로 검사 활성화나 배포 완료를 판정하지 않는다.
+릴리즈 준비 당시 main PR·태그·이미지·역병합·trusted 이벤트 실제 실행/보호 전환은 미실행이었다. 최신 결과는 아래 후속을 따른다. trusted는 main에 배치한 뒤 후속 실제 develop PR에서 현재 head의 실행 성공을 확인하고, 기존 commitlint를 유지한 채 context를 먼저 추가·readback한 뒤 legacy 요구/자산을 정리한다. 이 준비 기록만으로 검사 활성화나 배포 완료를 판정하지 않는다.
 
 
 릴리즈 준비 환경 대조에서 `.env.example`의 REDIS_URL 누락을 발견했다. 실제 Settings 클래스와 예제를 읽은 첫 시험은 관리자 OAuth Redis가 컨테이너 localhost로 지정돼 FAIL이었으며, 명시 Redis 서비스 주소 뒤에는 PASS다. README의 전역 HMAC 키 안내도 실제 고객별 DB 설정과 맞추고 세션 서명 키·Redis 요구를 연결했다. 운영 환경·DB·provider 설정은 변경하지 않았다. 현재 develop PR #71 및 동일 SHA push CI는 PASS이며 과거 미실행 표현은 당시 후보 기록으로 보존하고 QA README 후속에 최신 상태를 연결한다.
 
 
 새 버전/환경 안내의 독립 검토에서 개발 Keycloak localhost 예제도 web 컨테이너의 서버 코드 교환과 브라우저 주소를 함께 만족하지 못함을 발견했다. 예제는 실 접속 주소가 필요한 placeholder로 바꾸고 README에 공통 hostname/issuer/callback 설정 및 admin 허용/거부 확인 조건을 명시했다. 내부 서비스명으로 브라우저 URL을 바꾸는 단순 처방이나 운영 제공자 설정을 임의 적용하지 않았다. 기존 번들 Compose가 인증까지 무설정 실행되는 구성이라고 주장하지 않으며 실제 환경 구성·운영 IdP는 별도 미확인이다. 시험 배지도 현재 110건과 맞췄다.
+
+
+### v1.5.0 main·이미지·develop 인수 결과
+
+[main PR #72](https://github.com/grinvi04/webhook-service/pull/72)는 후보 `e2587a8`의 required5 PASS·미해결 스레드0 후 `661ee4fda9a78002383eeb38e0d7e49c1cbd0e59`로 병합됐다. 같은 main SHA에 v1.5.0 태그를 발행하고 원격 ref를 확인했다. [main push CI](https://github.com/grinvi04/webhook-service/actions/runs/37622110609)는 build-and-test·alembic-heads·secret-scan·publish-image 모두 SUCCESS다. GHCR `ghcr.io/grinvi04/webhook-service:latest`의 build-push 완료 로그와 action metadata가 보고한 manifest digest는 `sha256:79c2df3f934428cf7ac8a1a6f741cde7833d165b24636e27061a4f84785c4124`다. 비인증 registry 조회는 401, 현재 PAT의 package metadata 조회는 403으로 실제 레지스트리 pull/readback은 UNVERIFIED다. 추가 토큰 권한이나 package 공개 설정은 변경하지 않았다. [역병합 PR #73](https://github.com/grinvi04/webhook-service/pull/73)도 기존 required5 통과 후 develop `c872bc63e3863058575b66ef986233ff5840c49a`로 병합했다.
+
+새 version/env/docs 고정 후보의 독립 읽기 전용 검토에서 Keycloak localhost 설치 안내 P2를 발견했고, e2587a8의 공통 주소/placeholder 안내 보완 뒤 승인된 이미지 릴리즈 범위의 추가 P1/P2·필수 누락은 없었다. 최초 인증 작성자의 재대조는 독립 보안 승인으로 쓰지 않는다. 기존 고정 인증 후보의 독립 인수는 변경 없는 입력 범위로 재사용한다. 로컬 fresh110·커밋 훅4·Docker build/nonroot app·실제 이미지 runtime pin 감사0 및 예제 REDIS_URL RED→GREEN을 확인했다. 최초 격리 DB 암호 오류와 SVG checkout mtime 오탐(생성 내용 동일)도 과거 기록으로 보존한다.
+
+이미지 게시와 운영 배포는 구분한다. 실제 운영 IdP·redirect/issuer/audience/키 회전·운영 endpoint health는 UNVERIFIED이며 운영 DB/배포는 변경하지 않았다. 신뢰 검사 workflow는 main에 배치됐고 역병합 target 이벤트도 실행됐지만, 일반 후속 PR의 고정 head 검사·app-bound required context 전환은 아직 인수 중이다. 기존 commitlint·다른 CI·strict·관리자 보호는 유지한다. 후속 PR/서버 readback과 이 문서의 다음 결과로 최종 상태를 연결한다.

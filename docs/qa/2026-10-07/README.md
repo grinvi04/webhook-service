@@ -306,3 +306,12 @@ DYLD prefix를 추가해 재시도해도 동일했다([최초](dependency-audit.
 위 원문과 manifest는 당시 후보·실행 결과를 보존한다. SDK 7.1.1 최종 인증/권한·실 Keycloak·감사 결과의 후속을 quality-remediation 스펙에서 연결하며 초기 SDK 2.0.0 경고를 현재 결과로 쓰지 않는다. [PR #71](https://github.com/grinvi04/webhook-service/pull/71)은 현재 develop `c42142483fb1b95e88f6af5e16872c3c26f294e0`로 병합됐고 같은 SHA의 [push CI](https://github.com/grinvi04/webhook-service/actions/runs/37570548035)도 품질·단일 head·secret-scan PASS, publish SKIPPED다. 기존 고정 후보 독립 인수는 Harness 소비 기록 PR #498에 연결돼 있다.
 
 v1.5.0 준비는 버전·설치 안내만 바꾸며 기존 인증/의존성/마이그레이션 입력은 유지한다. 새 로컬 전체 110 PASS와 native commit 훅 PASS, 격리 DB 암호를 잘못 가정한 최초 107 PASS/3 ERROR 및 수정 이유를 `$HOME/Documents/Codex/2026-10-07/webhook-release-v1.5.0/`에 보존한다. 배포 예제에서 REDIS_URL이 누락돼 컨테이너 localhost가 선택되는 반례를 확인하고 Docker Redis 서비스 주소를 명시한다. main 릴리즈·이미지·역병합·trusted 활성화 결과는 아직 진행 중이며 운영 배포와 구분한다.
+
+
+### v1.5.0 main·이미지·develop 인수 결과
+
+[main PR #72](https://github.com/grinvi04/webhook-service/pull/72)는 후보 `e2587a8`의 required5 PASS·미해결 스레드0 후 `661ee4fda9a78002383eeb38e0d7e49c1cbd0e59`로 병합됐다. 같은 main SHA에 v1.5.0 태그를 발행하고 원격 ref를 확인했다. [main push CI](https://github.com/grinvi04/webhook-service/actions/runs/37622110609)는 build-and-test·alembic-heads·secret-scan·publish-image 모두 SUCCESS다. GHCR `ghcr.io/grinvi04/webhook-service:latest`의 build-push 완료 로그와 action metadata가 보고한 manifest digest는 `sha256:79c2df3f934428cf7ac8a1a6f741cde7833d165b24636e27061a4f84785c4124`다. 비인증 registry 조회는 401, 현재 PAT의 package metadata 조회는 403으로 실제 레지스트리 pull/readback은 UNVERIFIED다. 추가 토큰 권한이나 package 공개 설정은 변경하지 않았다. [역병합 PR #73](https://github.com/grinvi04/webhook-service/pull/73)도 기존 required5 통과 후 develop `c872bc63e3863058575b66ef986233ff5840c49a`로 병합했다.
+
+새 version/env/docs 고정 후보의 독립 읽기 전용 검토에서 Keycloak localhost 설치 안내 P2를 발견했고, e2587a8의 공통 주소/placeholder 안내 보완 뒤 승인된 이미지 릴리즈 범위의 추가 P1/P2·필수 누락은 없었다. 최초 인증 작성자의 재대조는 독립 보안 승인으로 쓰지 않는다. 기존 고정 인증 후보의 독립 인수는 변경 없는 입력 범위로 재사용한다. 로컬 fresh110·커밋 훅4·Docker build/nonroot app·실제 이미지 runtime pin 감사0 및 예제 REDIS_URL RED→GREEN을 확인했다. 최초 격리 DB 암호 오류와 SVG checkout mtime 오탐(생성 내용 동일)도 과거 기록으로 보존한다.
+
+이미지 게시와 운영 배포는 구분한다. 실제 운영 IdP·redirect/issuer/audience/키 회전·운영 endpoint health는 UNVERIFIED이며 운영 DB/배포는 변경하지 않았다. 신뢰 검사 workflow는 main에 배치됐고 역병합 target 이벤트도 실행됐지만, 일반 후속 PR의 고정 head 검사·app-bound required context 전환은 아직 인수 중이다. 기존 commitlint·다른 CI·strict·관리자 보호는 유지한다. 후속 PR/서버 readback과 이 문서의 다음 결과로 최종 상태를 연결한다.
