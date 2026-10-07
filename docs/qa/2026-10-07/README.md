@@ -299,3 +299,10 @@ DYLD prefix를 추가해 재시도해도 동일했다([최초](dependency-audit.
 ### 원격 전달 후보
 
 원격 전달용 이력은 기존 `2d082815`와 같은 앱·시험·의존성 입력으로 정리한다. 원래 후보와 이 문서의 과거 결과는 보존하며, develop PR의 실제 CI·리뷰·병합 결과가 추가 인수 근거다. trusted 검사의 기본 브랜치 배치와 GHCR 게시·운영 배포는 별도 단계다.
+
+
+### 현재 원격 인수와 v1.5.0 준비
+
+위 원문과 manifest는 당시 후보·실행 결과를 보존한다. SDK 7.1.1 최종 인증/권한·실 Keycloak·감사 결과의 후속을 quality-remediation 스펙에서 연결하며 초기 SDK 2.0.0 경고를 현재 결과로 쓰지 않는다. [PR #71](https://github.com/grinvi04/webhook-service/pull/71)은 현재 develop `c42142483fb1b95e88f6af5e16872c3c26f294e0`로 병합됐고 같은 SHA의 [push CI](https://github.com/grinvi04/webhook-service/actions/runs/37570548035)도 품질·단일 head·secret-scan PASS, publish SKIPPED다. 기존 고정 후보 독립 인수는 Harness 소비 기록 PR #498에 연결돼 있다.
+
+v1.5.0 준비는 버전·설치 안내만 바꾸며 기존 인증/의존성/마이그레이션 입력은 유지한다. 새 로컬 전체 110 PASS와 native commit 훅 PASS, 격리 DB 암호를 잘못 가정한 최초 107 PASS/3 ERROR 및 수정 이유를 `$HOME/Documents/Codex/2026-10-07/webhook-release-v1.5.0/`에 보존한다. 배포 예제에서 REDIS_URL이 누락돼 컨테이너 localhost가 선택되는 반례를 확인하고 Docker Redis 서비스 주소를 명시한다. main 릴리즈·이미지·역병합·trusted 활성화 결과는 아직 진행 중이며 운영 배포와 구분한다.

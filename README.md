@@ -106,10 +106,12 @@ cp .env.example .env
 | 변수 | 설명 | 예시 |
 |---|---|---|
 | `DATABASE_URL` | PostgreSQL 연결 URL | `postgresql+psycopg2://user:password@db:5432/webhook_db` |
+| `REDIS_URL` | 관리자 OAuth state 저장 Redis URL | `redis://redis:6379/0` |
 | `CELERY_BROKER_URL` | Redis 브로커 URL | `redis://redis:6379/0` |
 | `CELERY_RESULT_BACKEND` | Redis 결과 저장소 URL | `redis://redis:6379/0` |
-| `GITHUB_WEBHOOK_SECRET` | GitHub 웹훅 HMAC 시크릿 | `my-super-secret-key` |
-| `STRIPE_WEBHOOK_SECRET` | Stripe 웹훅 서명 시크릿 | `whsec_...` |
+| `SESSION_SECRET` | 관리자 세션 서명 키 | `openssl rand -hex 32`로 생성 |
+
+Docker Compose에서는 `REDIS_URL`도 별도 `redis` 서비스로 지정해야 합니다. 호스트에서 직접 실행할 때는 호스트에 공개한 시험/개발 Redis 주소를 사용하세요. 웹훅 서명 키는 전역 환경변수가 아니라 고객별 DB `customers.webhook_secret`에서 관리합니다.
 
 **선택 (PostgreSQL Docker용):**
 

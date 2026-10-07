@@ -220,3 +220,6 @@ webhook-service(FastAPI/Python)는 같은 손·같은 패턴으로 만들어져 
 필수 인수: 같은 후보의 lint/format/mypy/pytest 및 원격 required CI, 고정 후보 독립 보안·DB·설정 검토, main 병합 SHA와 tag 일치, main push의 이미지 게시 성공 및 digest, develop 역병합, 관련 문서와 작업 공간 정리다. 기존 실 Keycloak 및 runtime/dev pin graph 감사 0 증거는 해당 인증·의존성 입력이 불변인 범위에서 재사용하며 버전 준비를 실 인증 재시험으로 쓰지 않는다. staging/운영 endpoint는 AGENTS에 정의되지 않고 운영 미배포이므로 GHCR 게시와 운영 health를 구분한다.
 
 현재 main PR·태그·이미지·역병합·trusted 이벤트 실제 실행/보호 전환은 미실행이다. trusted는 main에 배치한 뒤 후속 실제 develop PR에서 현재 head의 실행 성공을 확인하고, 기존 commitlint를 유지한 채 context를 먼저 추가·readback한 뒤 legacy 요구/자산을 정리한다. 이 준비 기록만으로 검사 활성화나 배포 완료를 판정하지 않는다.
+
+
+릴리즈 준비 환경 대조에서 `.env.example`의 REDIS_URL 누락을 발견했다. 실제 Settings 클래스와 예제를 읽은 첫 시험은 관리자 OAuth Redis가 컨테이너 localhost로 지정돼 FAIL이었으며, 명시 Redis 서비스 주소 뒤에는 PASS다. README의 전역 HMAC 키 안내도 실제 고객별 DB 설정과 맞추고 세션 서명 키·Redis 요구를 연결했다. 운영 환경·DB·provider 설정은 변경하지 않았다. 현재 develop PR #71 및 동일 SHA push CI는 PASS이며 과거 미실행 표현은 당시 후보 기록으로 보존하고 QA README 후속에 최신 상태를 연결한다.
