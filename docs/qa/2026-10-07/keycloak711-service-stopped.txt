@@ -1,0 +1,4 @@
+/webhook-qa-keycloak22-20261007 running=false status=exited ports={"8080/tcp":[{"HostIp":"127.0.0.1","HostPort":"58080"}]}
+/webhook-qa-20261007-postgres running=false status=exited ports={"5432/tcp":[{"HostIp":"127.0.0.1","HostPort":"55441"}]}
+/webhook-qa-20261007-redis running=false status=exited ports={"6379/tcp":[{"HostIp":"127.0.0.1","HostPort":"56381"}]}
+app-server 127.0.0.1:58081 stopped

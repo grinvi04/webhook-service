@@ -1,0 +1,1 @@
+workflow syntax, publish boundary, trusted template: PASS

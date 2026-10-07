@@ -1,0 +1,51 @@
+FFFFF                                                                    [100%]
+=================================== FAILURES ===================================
+_ test_keycloak_root_url_normalizes_trailing_slash[https://qa-keycloak.invalid] _
+tests/test_keycloak_contract.py:26: in test_keycloak_root_url_normalizes_trailing_slash
+    assert app.main._keycloak_server_url(root) == "https://qa-keycloak.invalid/"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'app.main' has no attribute '_keycloak_server_url'
+_ test_keycloak_root_url_normalizes_trailing_slash[https://qa-keycloak.invalid/] _
+tests/test_keycloak_contract.py:26: in test_keycloak_root_url_normalizes_trailing_slash
+    assert app.main._keycloak_server_url(root) == "https://qa-keycloak.invalid/"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'app.main' has no attribute '_keycloak_server_url'
+_____________ test_application_keycloak_client_uses_one_realm_path _____________
+tests/test_keycloak_contract.py:40: in test_application_keycloak_client_uses_one_realm_path
+    assert get.call_args.args[0] == expected
+E   AssertionError: assert 'http://local...bhook-service' == 'http://local...bhook-service'
+E
+E     - http://localhost:8080/realms/webhook-service
+E     + http://localhost:8080/realms/realms/webhook-service
+E     ?                              +++++++
+___________ test_admin_login_and_code_exchange_use_real_sdk_methods ____________
+tests/test_keycloak_contract.py:68: in test_admin_login_and_code_exchange_use_real_sdk_methods
+    assert login.status_code in (302, 307)
+E   assert 200 in (302, 307)
+E    +  where 200 = <Response [200 OK]>.status_code
+----------------------------- Captured stdout call -----------------------------
+{"event": "HTTP Request: GET http://testserver/admin/login \"HTTP/1.1 200 OK\"", "level": "info", "logger": "httpx", "timestamp": "2026-10-07T01:09:10.216760Z", "func_name": "_send_single_request", "lineno": 1025}
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/admin/login "HTTP/1.1 200 OK"
+___________ test_missing_code_and_provider_error_do_not_authenticate ___________
+tests/test_keycloak_contract.py:99: in test_missing_code_and_provider_error_do_not_authenticate
+    assert missing.status_code == 422
+E   assert 404 == 422
+E    +  where 404 = <Response [404 Not Found]>.status_code
+----------------------------- Captured stdout call -----------------------------
+{"event": "HTTP Request: GET http://testserver/admin/oauth2-callback \"HTTP/1.1 404 Not Found\"", "level": "info", "logger": "httpx", "timestamp": "2026-10-07T01:09:10.233406Z", "func_name": "_send_single_request", "lineno": 1025}
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/admin/oauth2-callback "HTTP/1.1 404 Not Found"
+=============================== warnings summary ===============================
+.venv/lib/python3.11/site-packages/fastapi/testclient.py:1
+  /Users/grinvi04/project/webhook-service/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_keycloak_contract.py::test_keycloak_root_url_normalizes_trailing_slash[https://qa-keycloak.invalid]
+FAILED tests/test_keycloak_contract.py::test_keycloak_root_url_normalizes_trailing_slash[https://qa-keycloak.invalid/]
+FAILED tests/test_keycloak_contract.py::test_application_keycloak_client_uses_one_realm_path
+FAILED tests/test_keycloak_contract.py::test_admin_login_and_code_exchange_use_real_sdk_methods
+FAILED tests/test_keycloak_contract.py::test_missing_code_and_provider_error_do_not_authenticate
+5 failed, 1 warning in 1.03s

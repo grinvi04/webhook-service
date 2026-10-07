@@ -1,0 +1,8 @@
+.........................................................                [100%]
+=============================== warnings summary ===============================
+tests/test_idempotency.py::test_queue_failure_recovery_with_postgres_redis_and_worker
+  /Users/grinvi04/project/webhook-service/app/main.py:58: DeprecationWarning: Call to deprecated close. (Use aclose() instead) -- Deprecated since version 5.0.1.
+    await app.state.redis.close()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+57 passed, 1 warning in 3.25s

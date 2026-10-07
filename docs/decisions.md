@@ -19,6 +19,7 @@
 | **SessionMiddleware 등록 필수**: `admin.py`가 `request.session` 사용 — `app/main.py`에 미등록 시 런타임 에러 | 2026-06 | CLAUDE.md |
 | **테스트**: FastAPI 의존성 mock은 `app.dependency_overrides` 필수(`mocker.patch` 무효). Prometheus 검증은 `.collect()` 패턴(`get_sample_value`는 `None` 가능). delta 비교(절대값 금지) | 2026-06 | AGENTS.md(테스트) |
 | **로컬 환경**: macOS 15 — 모든 Python 명령에 `DYLD_LIBRARY_PATH=/opt/homebrew/opt/expat/lib` prefix. 로컬 DB 호스트 포트 **5433**(컨테이너 5432) | 2026-06 | CLAUDE.md, AGENTS.md |
-| 스택: FastAPI 0.117 + Celery 5.5(Redis) + PostgreSQL 15(SQLAlchemy 2.0 동기 + Alembic) + Keycloak 22(JWT). 마이그레이션 forward-only | 2026-06 | AGENTS.md(개요) |
+| 스택: FastAPI 0.117 + Celery 5.5(Redis) + PostgreSQL 15(SQLAlchemy 2.0 동기 + Alembic) + Keycloak 22(JWT). 마이그레이션 forward-only — FastAPI 버전은 아래 2026-10 행으로 대체됨 | 2026-06 | AGENTS.md(개요) |
+| 관리자 UI 보안 수정판 SQLAdmin 0.27.1은 Starlette 1.x를 요구한다. FastAPI 0.133.0·Starlette 1.3.1·Prometheus Instrumentator 8.0.1을 함께 고정하고 HTTP/admin/metrics/큐 회귀로 확인한다. python-keycloak 2.0.0의 인증 의존성 변경은 별도 검토 대상으로 남긴다. | 2026-10 | `requirements.txt`, `docs/specs/quality-remediation.md` |
 
 > 위는 기존 CLAUDE.md·AGENTS.md의 핵심 결정을 시드로 이관한 것. 새 설계 결정·도메인 지식은 여기 계속 누적한다.

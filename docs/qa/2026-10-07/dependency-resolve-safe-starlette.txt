@@ -1,0 +1,7 @@
+  × No solution found when resolving dependencies:
+  ╰─▶ Because prometheus-fastapi-instrumentator==7.1.0
+      depends on starlette>=0.30.0,<1.0.0 and you require
+      prometheus-fastapi-instrumentator==7.1.0, we can conclude that you
+      require starlette>=0.30.0,<1.0.0.
+      And because you require starlette==1.3.1, we can conclude that your
+      requirements are unsatisfiable.

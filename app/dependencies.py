@@ -8,6 +8,7 @@ from typing import Any
 import redis.asyncio as aioredis
 import stripe
 from fastapi import HTTPException, Request, status
+from jwcrypto import jwk
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -25,9 +26,28 @@ _KEYCLOAK_KEY_TTL = 300  # 5분
 async def _get_keycloak_public_key(keycloak_openid) -> str:
     now = time.time()
     if _keycloak_public_key_cache["key"] is None or now >= _keycloak_public_key_cache["expires_at"]:
-        _keycloak_public_key_cache["key"] = await asyncio.to_thread(keycloak_openid.public_key)
+        public_key = await asyncio.to_thread(keycloak_openid.public_key)
+        if not public_key.startswith(
+            ("-----BEGIN PUBLIC KEY-----", "-----BEGIN RSA PUBLIC KEY-----")
+        ):
+            public_key = f"-----BEGIN PUBLIC KEY-----\n{public_key}\n-----END PUBLIC KEY-----"
+        _keycloak_public_key_cache["key"] = public_key
         _keycloak_public_key_cache["expires_at"] = now + _KEYCLOAK_KEY_TTL
     return _keycloak_public_key_cache["key"]
+
+
+async def _decode_keycloak_token(keycloak_openid, token: str) -> dict[str, Any]:
+    public_key = await _get_keycloak_public_key(keycloak_openid)
+    claims = keycloak_openid.decode_token(
+        token,
+        key=jwk.JWK.from_pem(public_key.encode()),
+        algs=["RS256"],
+        leeway=0,
+    )
+    # jwcrypto verifies an exp claim when present, but does not require one.
+    if not isinstance(claims, dict) or "exp" not in claims:
+        raise ValueError("Token expiration is required")
+    return claims
 
 
 def get_redis(request: Request) -> aioredis.Redis:
@@ -82,11 +102,7 @@ async def get_current_user(request: Request) -> dict[str, Any]:
         # app.state에 저장된 keycloak_openid 객체 사용
         keycloak_openid = request.app.state.keycloak_openid
 
-        user_info = keycloak_openid.decode_token(
-            access_token,
-            key=await _get_keycloak_public_key(keycloak_openid),
-            options={"verify_signature": True, "verify_aud": False, "exp": True},
-        )
+        user_info = await _decode_keycloak_token(keycloak_openid, access_token)
 
         # 필요한 경우 사용자 역할(role) 검증 로직 추가
         # roles = user_info.get("realm_access", {}).get("roles", [])

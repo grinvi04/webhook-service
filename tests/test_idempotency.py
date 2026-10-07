@@ -9,10 +9,13 @@
 import hashlib
 import hmac
 import json
+import time
 import uuid
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+import redis
+from celery.contrib.testing.worker import start_worker
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, event
 from sqlalchemy.exc import IntegrityError
@@ -20,6 +23,8 @@ from sqlalchemy.orm import sessionmaker
 
 import app.database
 import app.main
+from app.celery_worker import celery
+from app.config import settings
 from app.database import Base
 from app.dependencies import get_redis
 from app.models.customer import Customer  # noqa: F401 — Base 등록 필수
@@ -95,6 +100,94 @@ def test_idempotency_key_released_on_queue_failure(queue_failure_client):
     # 예약했던 키를 해제 — 키에 tenant_id 포함(L4)
     expected_key = f"webhook:idempotency:{tenant_id}:github:{delivery_id}"
     redis_mock.delete.assert_awaited_once_with(expected_key)
+
+
+def test_queue_failure_recovery_with_postgres_redis_and_worker(isolated_service_db, mocker):
+    """A failed publish releases the real Redis reservation; retry reaches the DB worker."""
+    redis_url = settings.redis_url
+
+    customer_id = uuid.uuid4()
+    tenant_id = f"qa-{customer_id.hex}"
+    delivery_id = f"delivery-{customer_id.hex}"
+    key = f"webhook:idempotency:{tenant_id}:github:{delivery_id}"
+    body = json.dumps(
+        {
+            "action": "opened",
+            "sender": {"login": "octocat"},
+            "repository": {"full_name": "octocat/hello"},
+        }
+    ).encode()
+    headers = {
+        "content-type": "application/json",
+        "X-Hub-Signature-256": _github_signature(body),
+        "X-GitHub-Delivery": delivery_id,
+    }
+    real_task = process_github_webhook_task
+    failing_task = MagicMock()
+    failing_task.apply_async.side_effect = RuntimeError("broker unavailable")
+    mocker.patch("app.main.get_task", side_effect=[failing_task, real_task, real_task])
+
+    redis_client = redis.Redis.from_url(redis_url)
+    try:
+        with app.database.SessionLocal() as session:
+            session.add(
+                Customer(
+                    id=customer_id,
+                    tenant_id=tenant_id,
+                    name="QA customer",
+                    webhook_secret=TEST_SECRET,
+                    allowed_event_types=[],
+                )
+            )
+            session.commit()
+
+        with TestClient(app.main.app, raise_server_exceptions=False) as client:
+            first = client.post(f"/webhooks/{tenant_id}/github", content=body, headers=headers)
+            assert first.status_code == 500
+            assert redis_client.exists(key) == 0
+            assert redis_client.llen("high_priority") == 0
+
+            second = client.post(f"/webhooks/{tenant_id}/github", content=body, headers=headers)
+            assert second.status_code == 202
+            assert redis_client.exists(key) == 1
+            assert redis_client.llen("high_priority") == 1
+
+            duplicate = client.post(f"/webhooks/{tenant_id}/github", content=body, headers=headers)
+            assert duplicate.status_code == 202
+            assert duplicate.json() == {"message": "Webhook already processed."}
+            assert redis_client.llen("high_priority") == 1
+
+        with start_worker(
+            celery, perform_ping_check=False, queues=["high_priority"], pool="solo", concurrency=1
+        ):
+            deadline = time.monotonic() + 10
+            while time.monotonic() < deadline:
+                with app.database.SessionLocal() as session:
+                    event = (
+                        session.query(WebhookEvent)
+                        .filter_by(customer_id=customer_id, source="github", event_id=delivery_id)
+                        .one_or_none()
+                    )
+                    if event is not None and event.status == "PROCESSED":
+                        break
+                time.sleep(0.1)
+            else:
+                pytest.fail("worker did not persist the retry before the deadline")
+
+        with app.database.SessionLocal() as session:
+            assert (
+                session.query(WebhookEvent)
+                .filter_by(customer_id=customer_id, source="github", event_id=delivery_id)
+                .count()
+                == 1
+            )
+    finally:
+        redis_client.delete(key)
+        redis_client.close()
+        with app.database.SessionLocal() as session:
+            session.query(WebhookEvent).filter_by(customer_id=customer_id).delete()
+            session.query(Customer).filter_by(id=customer_id).delete()
+            session.commit()
 
 
 # ─── DB 고유제약 (AC-M1 backstop) ────────────────────────────────────────────

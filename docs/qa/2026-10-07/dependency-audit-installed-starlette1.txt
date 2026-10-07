@@ -1,0 +1,46 @@
+Found 43 known vulnerabilities in 9 packages
+Name             Version ID              Fix Versions
+---------------- ------- --------------- ------------
+anyio            4.13.0  PYSEC-2026-4025 4.14.2
+anyio            4.13.0  PYSEC-2026-4024 4.14.2
+ecdsa            0.19.2  PYSEC-2026-1325
+ecdsa            0.19.2  PYSEC-2026-1325
+pip              26.1    PYSEC-2026-196  26.1.2
+pip              26.1    PYSEC-2026-196  26.1.2
+pip              26.1    PYSEC-2026-3721 26.2
+pip              26.1    PYSEC-2026-3721 26.2.0
+pyasn1           0.6.3   PYSEC-2026-3456 0.6.4
+pyasn1           0.6.3   PYSEC-2026-3457 0.6.4
+pyasn1           0.6.3   PYSEC-2026-3456 0.6.4
+pyasn1           0.6.3   PYSEC-2026-3457 0.6.4
+pyasn1           0.6.3   PYSEC-2026-3455 0.6.4
+pyasn1           0.6.3   PYSEC-2026-3455 0.6.4
+python-jose      3.5.0   CVE-2026-85394
+python-multipart 0.0.29  PYSEC-2026-3040 0.0.31
+python-multipart 0.0.29  PYSEC-2026-3036 0.0.30
+python-multipart 0.0.29  PYSEC-2026-3037 0.0.30
+python-multipart 0.0.29  PYSEC-2026-3037 0.0.30
+python-multipart 0.0.29  PYSEC-2026-3036 0.0.30
+python-multipart 0.0.29  PYSEC-2026-3040 0.0.31
+setuptools       82.0.1  PYSEC-2026-3447 83.0.0
+setuptools       82.0.1  PYSEC-2026-3447 83.0.0
+urllib3          1.26.20 PYSEC-2026-1999 2.5.0
+urllib3          1.26.20 PYSEC-2026-1998 2.6.0
+urllib3          1.26.20 PYSEC-2026-1994 2.6.0
+urllib3          1.26.20 PYSEC-2026-1996 2.6.3
+urllib3          1.26.20 PYSEC-2026-141  2.7.0
+urllib3          1.26.20 PYSEC-2026-141  2.7.0
+urllib3          1.26.20 PYSEC-2026-1999 2.5.0
+urllib3          1.26.20 PYSEC-2026-1998 2.6.0
+urllib3          1.26.20 PYSEC-2026-1994 2.6.0
+urllib3          1.26.20 PYSEC-2026-1996 2.6.3
+urllib3          1.26.20 PYSEC-2026-4177 2.8.0
+urllib3          1.26.20 PYSEC-2026-4175 2.8.0
+virtualenv       21.4.1  PYSEC-2026-4011 21.7.12
+virtualenv       21.4.1  PYSEC-2026-4012 21.7.11
+virtualenv       21.4.1  PYSEC-2026-4014 21.7.12
+virtualenv       21.4.1  PYSEC-2026-4013 21.7.13
+virtualenv       21.4.1  PYSEC-2026-4011 21.7.12
+virtualenv       21.4.1  PYSEC-2026-4012 21.7.11
+virtualenv       21.4.1  PYSEC-2026-4013 21.7.13
+virtualenv       21.4.1  PYSEC-2026-4014 21.7.12

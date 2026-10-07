@@ -16,7 +16,7 @@ from sqlalchemy.orm import Session
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.sessions import SessionMiddleware
 
-from keycloak import KeycloakOpenID  # type: ignore[attr-defined]
+from keycloak import KeycloakOpenID
 
 from . import admin, database, webhooks  # noqa: F401
 from .config import settings
@@ -42,8 +42,13 @@ logger = logging.getLogger(__name__)
 verify_github = WebhookVerifier(source="github")
 verify_stripe = WebhookVerifier(source="stripe")
 
+
+def _keycloak_server_url(root: str) -> str:
+    return f"{root.rstrip('/')}/"
+
+
 keycloak_openid = KeycloakOpenID(
-    server_url=f"{settings.keycloak_url}/realms/{settings.keycloak_realm}",
+    server_url=_keycloak_server_url(settings.keycloak_url),
     client_id=settings.keycloak_client_id,
     realm_name=settings.keycloak_realm,
     client_secret_key=settings.keycloak_client_secret,
@@ -275,8 +280,9 @@ def replay_event(
     )
 
     # 권한 부여 로직 추가 (예: 'admin' 역할만 허용)
-    roles = current_user.get("realm_access", {}).get("roles", [])
-    if "admin" not in roles:
+    realm_access = current_user.get("realm_access")
+    roles = realm_access.get("roles") if isinstance(realm_access, dict) else None
+    if not isinstance(roles, list) or "admin" not in roles:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not enough permissions to replay events. Admin role required.",
