@@ -235,3 +235,12 @@ webhook-service(FastAPI/Python)는 같은 손·같은 패턴으로 만들어져 
 새 version/env/docs 고정 후보의 독립 읽기 전용 검토에서 Keycloak localhost 설치 안내 P2를 발견했고, e2587a8의 공통 주소/placeholder 안내 보완 뒤 승인된 이미지 릴리즈 범위의 추가 P1/P2·필수 누락은 없었다. 최초 인증 작성자의 재대조는 독립 보안 승인으로 쓰지 않는다. 기존 고정 인증 후보의 독립 인수는 변경 없는 입력 범위로 재사용한다. 로컬 fresh110·커밋 훅4·Docker build/nonroot app·실제 이미지 runtime pin 감사0 및 예제 REDIS_URL RED→GREEN을 확인했다. 최초 격리 DB 암호 오류와 SVG checkout mtime 오탐(생성 내용 동일)도 과거 기록으로 보존한다.
 
 이미지 게시와 운영 배포는 구분한다. 실제 운영 IdP·redirect/issuer/audience/키 회전·운영 endpoint health는 UNVERIFIED이며 운영 DB/배포는 변경하지 않았다. 신뢰 검사 workflow는 main에 배치됐고 역병합 target 이벤트도 실행됐지만, 일반 후속 PR의 고정 head 검사·app-bound required context 전환은 아직 인수 중이다. 기존 commitlint·다른 CI·strict·관리자 보호는 유지한다. 후속 PR/서버 readback과 이 문서의 다음 결과로 최종 상태를 연결한다.
+
+
+### 신뢰 원본 필수 검사 전환
+
+[일반 PR #74](https://github.com/grinvi04/webhook-service/pull/74)의 고정 head `2ae5c20fa1aedcf2d2e85d6c370f0d003da7aafa`에서 [target 실행](https://github.com/grinvi04/webhook-service/actions/runs/37622858614)의 HEAD_SHA 일치·commitlint-trusted SUCCESS를 확인했다. 같은 이름의 GitHub check-run도 해당 head·App 15368·SUCCESS다. PR #74는 required5와 독립 문서 대조 후 develop `81e82927ccb7105a88e56770f70d5d8454e181e7`로 병합됐다.
+
+main·develop 모두 기존 app-bound 검사에 trusted를 먼저 추가하고 서버 전체 readback을 확인한 뒤 기존 commitlint 요구만 제거했다. 현재 required5는 alembic-heads/build-and-test/secret-scan/commitlint-trusted/destructive-ddl, App 15368·strict true다. 승인·관리자 강제·대화 해결·force/delete 등 다른 보호 설정은 전후 동일하다. 이번 후속은 develop의 중복 legacy workflow만 제거한다. main의 legacy 파일은 v1.5.0 역사에 남고 다음 정상 릴리즈에서 제거 내용을 전달한다. 새 검사는 이미 main에 있으며 두 브랜치에 서버 강제된다.
+
+공개 target 이벤트의 향후 경로별 Actions policy 예외는 이번에 적용하지 않았다. 별도 운영자 승인 범위를 확인하고 실제 정책·정상 이벤트를 다시 인수해야 한다. 미확인 이벤트 정책·운영 IdP·운영 배포와 실제 registry pull/readback은 완료로 표시하지 않는다. 이 문서의 과거 진행 표현은 당시 후보 기록이다.
