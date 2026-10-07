@@ -223,3 +223,6 @@ webhook-service(FastAPI/Python)는 같은 손·같은 패턴으로 만들어져 
 
 
 릴리즈 준비 환경 대조에서 `.env.example`의 REDIS_URL 누락을 발견했다. 실제 Settings 클래스와 예제를 읽은 첫 시험은 관리자 OAuth Redis가 컨테이너 localhost로 지정돼 FAIL이었으며, 명시 Redis 서비스 주소 뒤에는 PASS다. README의 전역 HMAC 키 안내도 실제 고객별 DB 설정과 맞추고 세션 서명 키·Redis 요구를 연결했다. 운영 환경·DB·provider 설정은 변경하지 않았다. 현재 develop PR #71 및 동일 SHA push CI는 PASS이며 과거 미실행 표현은 당시 후보 기록으로 보존하고 QA README 후속에 최신 상태를 연결한다.
+
+
+새 버전/환경 안내의 독립 검토에서 개발 Keycloak localhost 예제도 web 컨테이너의 서버 코드 교환과 브라우저 주소를 함께 만족하지 못함을 발견했다. 예제는 실 접속 주소가 필요한 placeholder로 바꾸고 README에 공통 hostname/issuer/callback 설정 및 admin 허용/거부 확인 조건을 명시했다. 내부 서비스명으로 브라우저 URL을 바꾸는 단순 처방이나 운영 제공자 설정을 임의 적용하지 않았다. 기존 번들 Compose가 인증까지 무설정 실행되는 구성이라고 주장하지 않으며 실제 환경 구성·운영 IdP는 별도 미확인이다. 시험 배지도 현재 110건과 맞췄다.

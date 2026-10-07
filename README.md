@@ -4,7 +4,7 @@
 ![Python](https://img.shields.io/badge/python-3.11+-blue.svg)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.133-green.svg)
 ![License](https://img.shields.io/github/license/grinvi04/webhook-service)
-![Tests](https://img.shields.io/badge/tests-104%20passed-brightgreen)
+![Tests](https://img.shields.io/badge/tests-110%20passed-brightgreen)
 ![Version](https://img.shields.io/badge/version-1.5.0-blue)
 
 > **"위변조 차단·비동기 큐·자동 재시도를 갖춘 프로덕션 수준의 웹훅 수신 서비스."**
@@ -121,21 +121,25 @@ Docker Compose에서는 `REDIS_URL`도 별도 `redis` 서비스로 지정해야 
 | `POSTGRES_USER` | PostgreSQL 사용자 |
 | `POSTGRES_PASSWORD` | PostgreSQL 비밀번호 |
 
-**선택 (관리자 계정):**
+**기존 호환 설정 (관리자 로그인은 Keycloak과 admin 역할 사용):**
 
 | 변수 | 설명 |
 |---|---|
 | `ADMIN_USERNAME` | 관리자 UI 사용자명 |
 | `ADMIN_PASSWORD` | 관리자 UI 비밀번호 |
 
-**선택 (Keycloak — Replay API 사용 시 필요):**
+**필수 (Keycloak — 관리자 로그인 및 Replay API):**
 
 | 변수 | 기본값 | 설명 |
 |---|---|---|
-| `KEYCLOAK_URL` | `http://localhost:8080` | Keycloak 서버 URL |
+| `KEYCLOAK_URL` | 실제 공통 접속 URL로 설정 | 브라우저와 web 컨테이너에서 같은 IdP에 접속하는 URL |
 | `KEYCLOAK_REALM` | `webhook-service` | Keycloak 렐름명 |
 | `KEYCLOAK_CLIENT_ID` | `webhook-admin-client` | Keycloak 클라이언트 ID |
 | `KEYCLOAK_CLIENT_SECRET` | (없음) | Keycloak 클라이언트 시크릿 |
+
+관리자 인증을 사용할 때는 `.env.example`의 `keycloak.example.invalid`를 실제 IdP 주소로 바꾸세요. 컨테이너의 `localhost`는 web 자신을 가리키고 `keycloak:8080`은 브라우저에서 접근할 수 없으므로 둘을 대체값으로 쓰지 않습니다. 두 위치에서 접속 가능한 호스트 이름과 포트, Keycloak의 hostname/issuer 및 클라이언트 callback URL을 함께 맞춰야 합니다.
+
+개발 Compose의 번들 Keycloak은 localhost hostname 예제입니다. 컨테이너 관리자 로그인에 그대로 재사용하지 말고 위 공통 주소와 Keycloak hostname 설정을 맞춘 뒤 브라우저 로그인부터 서버의 코드 교환·admin 허용/거부까지 확인하세요. `docker-compose.prod.yml`에는 Keycloak 서비스가 없으므로 별도의 IdP 연결이 필요합니다. 실제 제공자·redirect·issuer/audience·키 회전과 운영 배포는 이 릴리즈의 이미지 게시 검증에 포함되지 않습니다.
 
 ### 2. Docker로 실행 (권장)
 
