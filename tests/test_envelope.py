@@ -12,7 +12,7 @@ from fastapi.testclient import TestClient
 
 import app.database
 import app.main
-from app.admin import WebhookEventAdmin
+from app.admin import WebhookEventAdmin, authentication_backend
 from app.dependencies import get_redis
 
 
@@ -28,6 +28,31 @@ def client():
 def test_admin_hard_delete_disabled():
     """관리자 UI에서 웹훅 이벤트 하드삭제 금지 (감사이력 보존, M4)."""
     assert WebhookEventAdmin.can_delete is False
+
+
+def test_admin_ajax_lookup_requires_login(client):
+    response = client.get(
+        "/admin/webhook-event/ajax/lookup?name=customer&term=x", follow_redirects=False
+    )
+    assert response.status_code == 302
+    assert response.headers["location"].endswith("/admin/login")
+
+
+def test_admin_sorting_rejects_hidden_column(isolated_service_db, client, mocker):
+    mocker.patch.object(
+        authentication_backend, "authenticate", new_callable=AsyncMock, return_value=True
+    )
+    allowed = client.get("/admin/webhook-event/list?sortBy=id")
+    hidden = client.get("/admin/webhook-event/list?sortBy=payload")
+    assert allowed.status_code == 200
+    assert hidden.status_code == 400
+
+
+def test_metrics_endpoint_remains_available(client):
+    client.get("/")
+    response = client.get("/metrics")
+    assert response.status_code == 200
+    assert "http_requests_total" in response.text
 
 
 def test_http_exception_uses_common_envelope(client):

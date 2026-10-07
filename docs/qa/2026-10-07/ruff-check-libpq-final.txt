@@ -1,0 +1,13 @@
+SIM300 [*] Yoda condition detected
+   --> tests/test_qa_isolation.py:120:16
+    |
+118 |     unsafe_url = f"redis://qa:{marker}@127.0.0.1:56381/0"
+119 |     with pytest.raises(AssertionError) as failure:
+120 |         assert "redis://127.0.0.1:56381/0" == unsafe_url
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+121 |     assert marker in str(failure.getrepr(style="long"))
+    |
+help: Rewrite as `unsafe_url == "redis://127.0.0.1:56381/0"`
+
+Found 1 error.
+[*] 1 fixable with the `--fix` option.

@@ -2,10 +2,10 @@
 
 [![CI](https://github.com/grinvi04/webhook-service/actions/workflows/ci.yml/badge.svg)](https://github.com/grinvi04/webhook-service/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.11+-blue.svg)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.117-green.svg)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.133-green.svg)
 ![License](https://img.shields.io/github/license/grinvi04/webhook-service)
-![Tests](https://img.shields.io/badge/tests-23%20passed-brightgreen)
-![Version](https://img.shields.io/badge/version-1.3.1-blue)
+![Tests](https://img.shields.io/badge/tests-104%20passed-brightgreen)
+![Version](https://img.shields.io/badge/version-1.4.0-blue)
 
 > **"위변조 차단·비동기 큐·자동 재시도를 갖춘 프로덕션 수준의 웹훅 수신 서비스."**
 
@@ -47,14 +47,14 @@ HMAC-SHA256 서명 검증, 비동기 큐 처리, 자동 재시도, Prometheus �
 
 | 역할 | 기술 |
 |---|---|
-| 웹 프레임워크 | FastAPI 0.117 |
+| 웹 프레임워크 | FastAPI 0.133 + Starlette 1.3 |
 | 비동기 작업 | Celery 5.5 + Redis 7 |
 | 데이터베이스 | PostgreSQL 15 + SQLAlchemy 2.0 |
 | DB 마이그레이션 | Alembic |
 | 인증 | Keycloak 22 (JWT, Replay API) |
 | 관리자 UI | SQLAdmin |
 | 모니터링 | Prometheus + Grafana |
-| 린팅 | ruff (line-length=88) |
+| 린팅 | ruff (line-length=100) |
 
 ## 🏗️ 아키텍처
 
@@ -197,14 +197,24 @@ uvicorn app.main:app --reload
 
 ### 단위·통합 테스트 (pytest)
 
+로컬에서는 별도 PostgreSQL 15(`127.0.0.1:55441/webhook_qa`)와 Redis 7(`127.0.0.1:56381/0`)를 준비하고 `WEBHOOK_QA_DATABASE_URL`에 시험 DB URL을 설정하세요. 커밋 전에는 아래의 `DATABASE_URL`·`REDIS_URL`·Celery URL을 셸에 export해 pre-commit의 pytest 훅에도 전달하세요. `PGHOSTADDR`·`PGSERVICE`·`PGSERVICEFILE`·`PGSYSCONFDIR`은 시험 연결을 바꿀 수 있으므로 unset 상태여야 합니다.
+
+`pytest.ini`는 설치된 `pytest-dotenv` 플러그인의 시작 단계 로딩을 차단하고, 시험 bootstrap은 앱 설정을 가져오기 전에 Pydantic dotenv 파일 로딩을 비활성화합니다. 시험에 필요한 값은 위 환경 변수로 명시해야 하며, 제품의 `.env` 파일에 의존하지 않습니다.
+
 ```bash
 # macOS (DYLD_LIBRARY_PATH 필요)
 DYLD_LIBRARY_PATH=/opt/homebrew/opt/expat/lib \
-  DATABASE_URL=postgresql+psycopg2://user:password@localhost:5433/webhook_db \
+  DATABASE_URL="$WEBHOOK_QA_DATABASE_URL" \
+  REDIS_URL=redis://127.0.0.1:56381/0 \
+  CELERY_BROKER_URL=redis://127.0.0.1:56381/0 \
+  CELERY_RESULT_BACKEND=redis://127.0.0.1:56381/0 \
   .venv/bin/pytest tests/ -v
 
-# Linux / CI
-DATABASE_URL=postgresql+psycopg2://user:password@localhost:5432/webhook_db \
+# GitHub Actions (GITHUB_ACTIONS=true)
+DATABASE_URL=postgresql+psycopg2://postgres:postgres@127.0.0.1:5432/test_db \
+  REDIS_URL=redis://127.0.0.1:6379/0 \
+  CELERY_BROKER_URL=redis://127.0.0.1:6379/0 \
+  CELERY_RESULT_BACKEND=redis://127.0.0.1:6379/0 \
   .venv/bin/pytest tests/ -v
 ```
 

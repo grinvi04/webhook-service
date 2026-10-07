@@ -14,12 +14,12 @@ FastAPI + Celery + PostgreSQL + Redis 기반 멀티테넌트 웹훅 처리 서�
 
 | 레이어 | 기술 |
 |---|---|
-| API | FastAPI 0.117, Python 3.11, Pydantic v2 |
+| API | FastAPI 0.133, Starlette 1.3, Python 3.11, Pydantic v2 |
 | 비동기 작업 | Celery 5.5 + Redis 7 (high_priority / default / dead_letters 큐) |
 | DB | PostgreSQL 15 + SQLAlchemy 2.0 (동기) + Alembic |
 | 인증 | Keycloak 22 (JWT Bearer, Replay API) |
 | 메트릭 | Prometheus (prometheus-client + prometheus-fastapi-instrumentator) |
-| 린터 | ruff (E, F, W, I, UP, line-length=88) |
+| 린터 | ruff (E, F, W, I, UP, line-length=100) |
 
 ---
 
@@ -34,8 +34,12 @@ DYLD_LIBRARY_PATH=/opt/homebrew/opt/expat/lib <명령어>
 
 ```bash
 # 테스트
+# WEBHOOK_QA_DATABASE_URL은 격리 PostgreSQL 15의 127.0.0.1:55441/webhook_qa URL로 미리 설정한다.
 DYLD_LIBRARY_PATH=/opt/homebrew/opt/expat/lib \
-  DATABASE_URL=postgresql+psycopg2://user:password@localhost:5433/webhook_db \
+  DATABASE_URL="$WEBHOOK_QA_DATABASE_URL" \
+  REDIS_URL=redis://127.0.0.1:56381/0 \
+  CELERY_BROKER_URL=redis://127.0.0.1:56381/0 \
+  CELERY_RESULT_BACKEND=redis://127.0.0.1:56381/0 \
   .venv/bin/pytest tests/ -v
 
 # lint
@@ -204,16 +208,27 @@ assert _counter_value(CUSTOMER_WEBHOOK_TOTAL, customer_id="t1", source="github")
 
 > 백엔드 전용(프론트엔드 없음). 모든 Python 명령에 macOS DYLD prefix 필수.
 pre-commit이 자동 실행하지만 수동 확인:
+로컬 통합 시험은 별도 PostgreSQL 15(`127.0.0.1:55441/webhook_qa`)와 Redis 7(`127.0.0.1:56381/0`)가 필요하다. `WEBHOOK_QA_DATABASE_URL`을 그 시험 DB URL로 설정한다. 커밋 전에는 아래의 `DATABASE_URL`·`REDIS_URL`·Celery URL을 셸에 export해 pre-commit pytest 훅에도 전달한다. `PGHOSTADDR`·`PGSERVICE`·`PGSERVICEFILE`·`PGSYSCONFDIR`은 unset 상태여야 한다. 훅은 주입된 환경을 덮어쓰지 않는다.
+`pytest.ini`는 `pytest-dotenv` 자동 로딩을 시작 단계에서 차단하고, `tests/conftest.py`는 앱 설정 import 전에 Pydantic dotenv 로딩을 비활성화한다. 테스트 설정을 제품 `.env`에 의존시키지 않는다.
 ```bash
 # lint·format
 DYLD_LIBRARY_PATH=/opt/homebrew/opt/expat/lib .venv/bin/ruff check app/ tests/
 # 테스트 (= 품질/회귀 검사)
 DYLD_LIBRARY_PATH=/opt/homebrew/opt/expat/lib \
-  DATABASE_URL=postgresql+psycopg2://user:password@localhost:5433/webhook_db \
+  DATABASE_URL="$WEBHOOK_QA_DATABASE_URL" \
+  REDIS_URL=redis://127.0.0.1:56381/0 \
+  CELERY_BROKER_URL=redis://127.0.0.1:56381/0 \
+  CELERY_RESULT_BACKEND=redis://127.0.0.1:56381/0 \
   .venv/bin/pytest tests/ -q
 ```
 
 커밋 메시지 형식: `타입(범위): 제목` + `Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>`
+
+### 완료 증거 계약
+
+- 구현 전 요구·위험에서 필수 QA 범위와 기대 결과를 기존 스펙에 적는다. 웹훅 큐·멱등·실패 복구는 정상 요청뿐 아니라 실패 후 재시도와 실제 Redis/DB 저장 경계를 확인한다. mock 호출만으로 저장·복구를 완료로 판정하지 않는다.
+- 현재 후보와 환경에 맞는 명령·종료 코드·원문 로그를 남기고, 필수 항목을 PASS/FAIL/UNVERIFIED/SKIP으로 구분한다. 필수 FAIL/UNVERIFIED가 남으면 완료로 보고하지 않는다.
+- 코드·설정·진행 단계가 바뀌면 관련 스펙·사용 안내의 상태와 다음 행동을 실제 결과에 맞춘다. 과거 감사·검증 기록은 당시 후보의 증거로 보존한다.
 
 ## 문서 관리
 

@@ -2,7 +2,7 @@ pytest
 pytest-mock
 httpx  # For async testing of the FastAPI app
 pytest-asyncio # For async tests
-pytest-dotenv # For loading .env in pytest
+pytest-dotenv # Kept to verify pytest.ini blocks this installed plugin from loading .env
 
 # For Code Quality & DX
 ruff==0.15.15

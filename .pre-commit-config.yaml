@@ -24,7 +24,7 @@ repos:
 
     -   id: pytest
         name: pytest
-        entry: bash -c 'DYLD_LIBRARY_PATH=/opt/homebrew/opt/expat/lib DATABASE_URL=postgresql+psycopg2://user:password@localhost:5433/webhook_db .venv/bin/pytest tests/ -q --tb=short'
+        entry: bash -c 'DYLD_LIBRARY_PATH=/opt/homebrew/opt/expat/lib .venv/bin/pytest tests/ -q --tb=short'
         language: system
         pass_filenames: false
         always_run: true

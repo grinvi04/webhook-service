@@ -1,0 +1,442 @@
+{
+  "base_ref": "origin/develop",
+  "base_sha": "83cd3989298636436ad1f26e734d0678f88d7440",
+  "branch": "fix/harness-qa-contract",
+  "environment": "macOS Python 3.11; isolated PostgreSQL 15 127.0.0.1:55441/webhook_qa and Redis 7 127.0.0.1:56381/0; DYLD_LIBRARY_PATH=/opt/homebrew/opt/expat/lib",
+  "source_sha256": {
+    ".github/workflows/ci.yml": "8d14cf3c9a262c290724220d77f7f63e0f90402f935c1a5925bb0fabc9d11ae6",
+    ".github/workflows/commitlint-trusted.yml": "f48ff0fb9f382e318235c915f01dc311a4cc47cc4120c1dfaa73972451454e54",
+    ".pre-commit-config.yaml": "e08bfb3e860f49f5562bc7328a8b2a1acdff6aa9cf85316b96e6d02fbe021092",
+    "AGENTS.md": "cd7f97a6655e40c1065a73f06bba8f6dbccb250444994d3f2c9304c2304daaa2",
+    "README.md": "866fe77d85db29452fa17538a7ba337c86af483d5c5e553595794fe4570ca686",
+    "docs/decisions.md": "dde4a47b30b606953d0cfa2529c3e0129736d4d50a38b6bd3332800f8e53a406",
+    "docs/specs/quality-remediation.md": "50cf2240e49b0742500cf1958dd73d9abfe70397a723383cf3f89663331df71b",
+    "requirements.txt": "020eaeed45d8069fcb636d8cd0272e485b5822c0dbbadafd5d67f80a3d6f65e1",
+    "tests/test_envelope.py": "1d301001bb308e3c11a76c30bcfe1f7b97ba05bac9ce278ebb3ee745b08f6a63",
+    "tests/test_idempotency.py": "1e765efa6c9141e59a1989ea5c132eaee739b1cc08dd823e3e9ddd11563bca90",
+    "tests/conftest.py": "b5bb3ac44c29f93fb61f86f155385033eac1926e095fe4abfb3fa124e611fc63",
+    "tests/test_qa_isolation.py": "d9b5eb6e2747459e03ebb14be373c405cf06b218b9076b7dc8ff5bbdeb9936b2",
+    "pytest.ini": "7a97d762e8cd3616f87e0c113420a1e84b91f05c2eee92a868e59a1c393c54e1",
+    "requirements-dev.txt": "002d053da822b50f9d63a9bf61f8fc31503d6f5b026e867d76ce9713931b513f",
+    "docs/qa/2026-10-07/README.md": "caabdc7b4f4696ade01dd5e479050610ecb8b1194c002d67218509cb2c86ff4c",
+    "app/admin.py": "1c14a67742ce2f5dbe7b9a1a23a94b76612bde176296ac299fe5d9316f240816",
+    "tests/test_keycloak_contract.py": "15d75e083da981942379dcab8eee67e25aefa1f26872a6a0a4f4ba12a2dc861b",
+    "app/dependencies.py": "ed0082575d778f5a1914f387742d1e203ed08d08de95122fd05b69fcc36c3b6f",
+    "app/main.py": "3fdc3e8e7e8d21f3394d1ee5d3285547d53db967ff8ab987c15a5707a8589700",
+    "tests/test_unit_signatures.py": "2bc4142e11df7fd85271e6e92f94f6c506d74651142ab97ddeaa77cfd3d70c56"
+  },
+  "evidence": {
+    "ruff-check-final.txt": {
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+      "exit_code": 0
+    },
+    "ruff-format-final.txt": {
+      "sha256": "2de9ddcc7788f957b3bb03cb8e20b1f07f56cc1347066641a4e1de2f2570418e",
+      "exit_code": 0
+    },
+    "mypy-final.txt": {
+      "sha256": "5ca59a2361304496c36048048a43aa6f41eb23e74111d16719b962637888fc08",
+      "exit_code": 0
+    },
+    "alembic-final.txt": {
+      "sha256": "4aab902c1e8a30a4f7407fb2b895c9a3c3cb660fa354d2ea49eb7caac8fb35fd",
+      "exit_code": 0
+    },
+    "pytest-final.txt": {
+      "sha256": "aea14bc3520d922c5e0bfe4336c17fda9f100d63bb3782be7a631ab68ab21374",
+      "exit_code": 0
+    },
+    "pytest-fresh-env.txt": {
+      "sha256": "a3903e2c6ec4716fe161b4f907ae208d7b7bc3ef34f4fa6aed3df37a0b6dba09",
+      "exit_code": 0
+    },
+    "workflow-final.txt": {
+      "sha256": "02776bcb6c1a3ab1559cc25bd1bad70166f4bdd7d1788f1a41851e8665a490e0",
+      "exit_code": 0
+    },
+    "precommit-final.txt": {
+      "sha256": "cbcc7536a76f55eb0d587a06da0c3578aed86b7fc2a18d1c3fa5fd5228430bf7",
+      "exit_code": 0
+    },
+    "pytest-isolation-reject.txt": {
+      "sha256": "30c433ca04d89754c49cd717585032811a70350654d7e68c081be8a1b8c956bc",
+      "exit_code": 1
+    },
+    "precommit-base-hook-repro.txt": {
+      "sha256": "6caea4f2cfa74e797298e1e566e64fc729089e9cca05b89122d40f78bc48c159",
+      "exit_code": 1
+    },
+    "dependency-resolve-final.txt": {
+      "sha256": "aa41da28910744bdbde1854241f56472fa900a48ca268982b715d5604de2a533",
+      "exit_code": 0
+    },
+    "dependency-audit-direct-final.txt": {
+      "sha256": "79d30422388543b2563e1dde76bb7e7857d7ef0c6fdf05c8c71598633ca07e1e",
+      "exit_code": 0
+    },
+    "dependency-audit-final.txt": {
+      "sha256": "61f729b545c1234956ee8f9872c5b508df13f4f167b4d6be13e999f86cde844c",
+      "exit_code": 1
+    },
+    "dependency-audit-fresh-env.txt": {
+      "sha256": "86486956ea8cdcc03c8f7616809de8fe17e0344b9fb48c68830c36b586e6a119",
+      "exit_code": 1
+    },
+    "pytest-isolation-candidate.txt": {
+      "sha256": "23ae004bca1116f5e1f02df202cf771aa74d9f79b423166562959a4f38f2c12f",
+      "exit_code": 1
+    },
+    "pytest-isolation-fixed.txt": {
+      "sha256": "c645470883f4dca0fac0ef60360bfd817d910d304760539b7af9042a31a1279e",
+      "exit_code": 1
+    },
+    "pytest-isolation-reject-final.txt": {
+      "sha256": "d9fbe6c5107ab4f085df9faa896dd7f4f797f380d994966d9098ce80b5dc817c",
+      "exit_code": 0
+    },
+    "pytest-isolation-services-final.txt": {
+      "sha256": "edd4c976b65813b811f76637d3a9203885d15cedd689b6c7647777c9ade0065c",
+      "exit_code": 0
+    },
+    "pytest-isolation-live-reject-final.txt": {
+      "sha256": "a9114d094e5992c5b225b766455bd53a1424304a13c89c260378a4b60cab089e",
+      "exit_code": 1
+    },
+    "pytest-followup-final.txt": {
+      "sha256": "89608a6730ff5aef6e8cffdcf5b800180d9c841d715ee1ef0500be0feede03dd",
+      "exit_code": 0
+    },
+    "pytest-fresh-env-followup-final.txt": {
+      "sha256": "036d24e96d86f9bd586decde96b6d572e6ba4e99fd9518f43af4a47df487ca54",
+      "exit_code": 0
+    },
+    "ruff-check-followup-final.txt": {
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+      "exit_code": 0
+    },
+    "ruff-format-followup-final.txt": {
+      "sha256": "00130a4c8959aba48d3edd55439cc0023d306b510d8ec56f7d1dd97cd7bf3fb2",
+      "exit_code": 0
+    },
+    "mypy-followup-final.txt": {
+      "sha256": "5ca59a2361304496c36048048a43aa6f41eb23e74111d16719b962637888fc08",
+      "exit_code": 0
+    },
+    "alembic-followup-final.txt": {
+      "sha256": "4aab902c1e8a30a4f7407fb2b895c9a3c3cb660fa354d2ea49eb7caac8fb35fd",
+      "exit_code": 0
+    },
+    "workflow-followup-final.txt": {
+      "sha256": "59d8d2755b91b01e1eddab46ad3b2e56bebe74c3525b20b43641f478739467bd",
+      "exit_code": 0
+    },
+    "precommit-followup-final.txt": {
+      "sha256": "cbcc7536a76f55eb0d587a06da0c3578aed86b7fc2a18d1c3fa5fd5228430bf7",
+      "exit_code": 0
+    },
+    "pytest-libpq-userinfo-candidate.txt": {
+      "sha256": "a619c729d5f62ba3716916a9242d81212c4191a3c68c13669a9c1a32cffc4178",
+      "exit_code": 0
+    },
+    "pytest-libpq-userinfo-final.txt": {
+      "sha256": "cdb1e7eb476a0e5ae1a7717b8529d462b6e39ec674ed38e988b6ee3520e6930d",
+      "exit_code": 0
+    },
+    "pytest-pghostaddr-live-reject.txt": {
+      "sha256": "59eb9f9d3ef2eab734fa2d1b96b69367889787ec89261097d14e6a890f182c8a",
+      "exit_code": 1
+    },
+    "pytest-libpq-full-final.txt": {
+      "sha256": "acd049161376af58d6ac649eae30dfc2f8ac56505afaf4a432ab8013202a0910",
+      "exit_code": 0
+    },
+    "pytest-libpq-fresh-final.txt": {
+      "sha256": "083f74fb561437826ca9367a53495e4a4632ba77e426fe3d324354395d17f01e",
+      "exit_code": 0
+    },
+    "ruff-check-libpq-final.txt": {
+      "sha256": "1895a8251718c7c2e151ab9c12915b7a4914fd757b3e4fa2e475879fe319c823",
+      "exit_code": 1
+    },
+    "ruff-check-libpq-passed.txt": {
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+      "exit_code": 0
+    },
+    "ruff-format-libpq-final.txt": {
+      "sha256": "00130a4c8959aba48d3edd55439cc0023d306b510d8ec56f7d1dd97cd7bf3fb2",
+      "exit_code": 0
+    },
+    "mypy-libpq-final.txt": {
+      "sha256": "5ca59a2361304496c36048048a43aa6f41eb23e74111d16719b962637888fc08",
+      "exit_code": 0
+    },
+    "precommit-libpq-final.txt": {
+      "sha256": "cbcc7536a76f55eb0d587a06da0c3578aed86b7fc2a18d1c3fa5fd5228430bf7",
+      "exit_code": 0
+    },
+    "service-binding-followup.txt": {
+      "sha256": "f16e1f6209387c9c56acd787a3bc517b9a3b7f1cd828d34483bf94d23d983737",
+      "exit_code": 0
+    },
+    "service-stopped-final.txt": {
+      "sha256": "96c51f031d953c9d17a6c055ceaf25ced5dc281ae23657b42c1f0522a2f4a745",
+      "exit_code": 0
+    },
+    "pytest-dotenv-candidate.txt": {
+      "sha256": "4237eb8d30ab4e25d028ca343d50bfba364b7f76a907b73390b9601a16e46fe1",
+      "exit_code": 0
+    },
+    "pytest-dotenv-bootstrap-final.txt": {
+      "sha256": "3a92c87b1fcde8a35930870b7daf12ba8298ab3a9f16009607eaf6a5a4e541c3",
+      "exit_code": 0
+    },
+    "pytest-dotenv-full-final.txt": {
+      "sha256": "bcfa8d53e0ab929e86bd67d80a60c16349d9e9c285198f935cc01178ce28e38a",
+      "exit_code": 0
+    },
+    "pytest-dotenv-fresh-final.txt": {
+      "sha256": "589170566b7297171307d02317c9ade027f088da39a5b2ef2ddacc7bb066b27f",
+      "exit_code": 0
+    },
+    "ruff-check-dotenv-final.txt": {
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+      "exit_code": 0
+    },
+    "ruff-format-dotenv-final.txt": {
+      "sha256": "00130a4c8959aba48d3edd55439cc0023d306b510d8ec56f7d1dd97cd7bf3fb2",
+      "exit_code": 0
+    },
+    "mypy-dotenv-final.txt": {
+      "sha256": "5ca59a2361304496c36048048a43aa6f41eb23e74111d16719b962637888fc08",
+      "exit_code": 0
+    },
+    "precommit-dotenv-final.txt": {
+      "sha256": "cbcc7536a76f55eb0d587a06da0c3578aed86b7fc2a18d1c3fa5fd5228430bf7",
+      "exit_code": 0
+    },
+    "qa-auth-metadata-probe.txt": {
+      "sha256": "45a7bf134af42dfb49615495aa97faeb4db95dbeb618cf2233db63bf22b5aba8",
+      "exit_code": 0
+    },
+    "precommit-dotenv-commit-credential-final.txt": {
+      "sha256": "cbcc7536a76f55eb0d587a06da0c3578aed86b7fc2a18d1c3fa5fd5228430bf7",
+      "exit_code": 0
+    },
+    "pytest-startup-red.txt": {
+      "sha256": "37a35e6e492cea8759ec07104c257715617d7a48eecba113d92d9f786ca24eea",
+      "exit_code": 4
+    },
+    "pytest-startup-red-explicit-env.txt": {
+      "sha256": "0eb43db1c92c2a7dacff20d5d6b189f042f2ecd5e028178c444820a6c208d5e1",
+      "exit_code": 1
+    },
+    "pytest-startup-green.txt": {
+      "sha256": "7ccf0fd814bf75a35db28acedc1714736804ec6b943ff25b8e07969d5631a02d",
+      "exit_code": 0
+    },
+    "service-binding-startup-final.txt": {
+      "sha256": "07abcdad41929b6171d2c8cadf8de592da0af291648b5ee7e51861ace524098e",
+      "exit_code": 0
+    },
+    "service-stopped-startup-final.txt": {
+      "sha256": "21dea4cfac7e666e9e2745269694709a0fb8e0f27ddaaae369c9d20c5bb062a5",
+      "exit_code": 0
+    },
+    "pytest-startup-full-final.txt": {
+      "sha256": "acad2a5622a60ed4d38b48c590edb440f2c4bbd3ed2ebb05afc0a9406bcd0f13",
+      "exit_code": 0
+    },
+    "pytest-startup-fresh-final.txt": {
+      "sha256": "ac64b1670f6c866bae01f6d224a80921d170c0c0ebba4acb4953ddceb212b7b9",
+      "exit_code": 0
+    },
+    "ruff-check-startup-final.txt": {
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+      "exit_code": 0
+    },
+    "ruff-format-startup-final.txt": {
+      "sha256": "00130a4c8959aba48d3edd55439cc0023d306b510d8ec56f7d1dd97cd7bf3fb2",
+      "exit_code": 0
+    },
+    "mypy-startup-final.txt": {
+      "sha256": "5ca59a2361304496c36048048a43aa6f41eb23e74111d16719b962637888fc08",
+      "exit_code": 0
+    },
+    "alembic-startup-final.txt": {
+      "sha256": "4aab902c1e8a30a4f7407fb2b895c9a3c3cb660fa354d2ea49eb7caac8fb35fd",
+      "exit_code": 0
+    },
+    "precommit-startup-final.txt": {
+      "sha256": "cbcc7536a76f55eb0d587a06da0c3578aed86b7fc2a18d1c3fa5fd5228430bf7",
+      "exit_code": 0
+    },
+    "keycloak-sdk-red.txt": {
+      "sha256": "d5843fe828e7ab8c43c7293f789c2b8ab54cdf6343ef0e897f104540a1854118",
+      "exit_code": 1
+    },
+    "keycloak-state-role-candidate.txt": {
+      "sha256": "c6d972750f903a7cf184e85ef5aa311b1b267d73cbd6a6bfde2a899904d3f80d",
+      "exit_code": 1
+    },
+    "keycloak-auth-target-final.txt": {
+      "sha256": "5271bc742092776450640d00e8006c56f59aaaaacecd0a7eab350819e097861d",
+      "exit_code": 0
+    },
+    "pytest-auth-full-final.txt": {
+      "sha256": "fd68c27461a44c4c20d50f93dee5d295bd4022948de8fbdd79bf40d367ac9895",
+      "exit_code": 0
+    },
+    "pytest-auth-fresh-final.txt": {
+      "sha256": "d347b3b57740b914e63e529b8bd6262d2141488e1176958a45e9021c526b1f6a",
+      "exit_code": 0
+    },
+    "ruff-check-auth-final.txt": {
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+      "exit_code": 0
+    },
+    "ruff-format-auth-final.txt": {
+      "sha256": "21a61ae0f7b0971d38a01e6a0b3b4e7d53ef9ca8a0e23eb8c6ab3742fbb5f1c7",
+      "exit_code": 0
+    },
+    "mypy-auth-final.txt": {
+      "sha256": "5ca59a2361304496c36048048a43aa6f41eb23e74111d16719b962637888fc08",
+      "exit_code": 0
+    },
+    "alembic-auth-final.txt": {
+      "sha256": "4aab902c1e8a30a4f7407fb2b895c9a3c3cb660fa354d2ea49eb7caac8fb35fd",
+      "exit_code": 0
+    },
+    "precommit-auth-final.txt": {
+      "sha256": "cbcc7536a76f55eb0d587a06da0c3578aed86b7fc2a18d1c3fa5fd5228430bf7",
+      "exit_code": 0
+    },
+    "service-binding-auth-final.txt": {
+      "sha256": "5e6927f3c16d3b62b3cf3ad04f003517c9d0775856529a7e507bb9b8aa53b718",
+      "exit_code": 0
+    },
+    "service-stopped-auth-final.txt": {
+      "sha256": "8fcf13795c03f39ac555a75f1e4709b7a2f29d3d85922dc7075fc28b60391c69",
+      "exit_code": 0
+    },
+    "keycloak711-red.txt": {
+      "sha256": "44b56178b7e498c78f162c54bea628fc82990ad8770971bce67d55c33bf2ea9d",
+      "exit_code": 1
+    },
+    "keycloak711-contract-red.txt": {
+      "sha256": "c10b87c227f8c0dc6c459b4b1a33d631ba607e421dccb74bd36afa61f82d8f5e",
+      "exit_code": 1
+    },
+    "keycloak711-focused-green.txt": {
+      "sha256": "d88125412435e2d7d3cc4f897781be85a802842e904ade0a68a6280761d383c6",
+      "exit_code": 0
+    },
+    "keycloak711-full-fresh.txt": {
+      "sha256": "6477909650d5109f62d29c5884a34e1047b07614bd49240c124348209b33223b",
+      "exit_code": 0
+    },
+    "keycloak711-format.txt": {
+      "sha256": "21a61ae0f7b0971d38a01e6a0b3b4e7d53ef9ca8a0e23eb8c6ab3742fbb5f1c7",
+      "exit_code": 0
+    },
+    "keycloak711-lint.txt": {
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+      "exit_code": 0
+    },
+    "keycloak711-mypy.txt": {
+      "sha256": "5ca59a2361304496c36048048a43aa6f41eb23e74111d16719b962637888fc08",
+      "exit_code": 0
+    },
+    "keycloak711-alembic.txt": {
+      "sha256": "4aab902c1e8a30a4f7407fb2b895c9a3c3cb660fa354d2ea49eb7caac8fb35fd",
+      "exit_code": 0
+    },
+    "keycloak711-audit.txt": {
+      "sha256": "528402760d0457ffaafd514f6ed870e0f137588526c4603a45a9e2760a61369b",
+      "exit_code": 1
+    },
+    "keycloak711-runtime-audit.txt": {
+      "sha256": "79d30422388543b2563e1dde76bb7e7857d7ef0c6fdf05c8c71598633ca07e1e",
+      "exit_code": 0
+    },
+    "keycloak711-dev-audit.txt": {
+      "sha256": "79d30422388543b2563e1dde76bb7e7857d7ef0c6fdf05c8c71598633ca07e1e",
+      "exit_code": 0
+    },
+    "keycloak711-runtime-resolved.txt": {
+      "sha256": "cddc7fec47851304a3ca6d064bf7c8c1f42443029131c38454a045a217a51bf7",
+      "exit_code": 0
+    },
+    "keycloak711-dev-resolved.txt": {
+      "sha256": "ca80b5e69778b944727f8dffc0a7153f4df2089531c60a284e82bc4ee8fda78d",
+      "exit_code": 0
+    },
+    "keycloak711-precommit.txt": {
+      "sha256": "6208e6bef993069ac4999f2f2dad8ea13264106962e6464ebfe1d5184cc2a2b3",
+      "exit_code": 1
+    },
+    "keycloak711-precommit-final.txt": {
+      "sha256": "cbcc7536a76f55eb0d587a06da0c3578aed86b7fc2a18d1c3fa5fd5228430bf7",
+      "exit_code": 0
+    },
+    "keycloak711-provider-probe.txt": {
+      "sha256": "af0143fed68ebaf3f453d29c448c930bbac50ac9daa3960ef9f188acf459f3d5",
+      "exit_code": 0
+    },
+    "keycloak711-browser-probe.txt": {
+      "sha256": "97b7ea3235b876566dcca64435a9ba9f081b118f74352e19e0b1fc9c937eeb33",
+      "exit_code": 0
+    },
+    "keycloak711-service-binding.txt": {
+      "sha256": "86c00c6de7001c7302b640213ad0c035cd83265a7cd907f517a115acb6b620af",
+      "exit_code": 0
+    },
+    "keycloak711-service-stopped.txt": {
+      "sha256": "dd1894e0fef72636e1c52c54cdf5dd60d7e98e253e3d139e07d30bcb4bab629c",
+      "exit_code": 0
+    },
+    "keycloak711-service-removed.txt": {
+      "sha256": "1d81a0fd7c31b653f32604760f4a4c8944b5de2c5dac530a4f4a75a032454ced",
+      "exit_code": 0
+    }
+  },
+  "full_runtime_dependency_audit": "PASS for resolved 74-package runtime graph with python-keycloak==7.1.1; prior eba4bfb graph FAIL 15 remains historical, direct pip-audit -r ensurepip SIGABRT logged separately",
+  "remote_ci_and_keycloak": "local own Keycloak 22.0.5 plus Chrome admin/nonadmin OAuth callback PASS; operational Keycloak issuer/audience/rotation and remote CI UNVERIFIED",
+  "reviewed_parent_sha": "eba4bfb2b27358ac4aca399548712c1eb39d5d4c",
+  "candidate_phase": "python-keycloak 7.1.1 local migration candidate; independent review pending",
+  "installed_and_probe_source_sha256": {
+    "/tmp/webhook-keycloak711-candidate/fullvenv/lib/python3.11/site-packages/keycloak/keycloak_openid.py": "3b7df01ca4ee64d6fc493b27fbdf61b787d65f5f318dd258b51227220361c841",
+    "/tmp/webhook-keycloak711-candidate/fullvenv/lib/python3.11/site-packages/jwcrypto/jwt.py": "2f9ac8c496d3e5f92c493034ac1e37b7a4aa68a263bb572bb52184962396ca7c",
+    "/tmp/webhook-keycloak711-candidate/provider_probe.py": "a009d2764dbf96b77377af85f249dab8ce7c03870e92f2caffd075731d49fdc9",
+    "/tmp/webhook-keycloak711-candidate/browser_probe.py": "5ab61f7b3775e2da422455e619b7b34a36d5b002120c43606f404c9f1d8d23a3",
+    "/tmp/webhook-keycloak711-candidate/server.py": "8e18dda834f98c6ca80197d872a7bb23ab85ee5f6df181fbb1b3ef075027db14",
+    "/tmp/webhook-keycloak711-candidate/setup_users.py": "d47697c13cdbed1c1af2e5e4ccdf2e532f0a37484f8366044bfece958cba7142"
+  },
+  "current_candidate_commands": {
+    "cwd": "/Users/grinvi04/project/webhook-service",
+    "environment": "Python 3.11; DYLD_LIBRARY_PATH=/opt/homebrew/opt/expat/lib; QA runner injects own 127.0.0.1 DB/Redis/Celery and synthetic Keycloak URL and session key, removes PGHOSTADDR/PGSERVICE/PGSERVICEFILE/PGSYSCONFDIR/PYTEST_ADDOPTS; product .env not read directly",
+    "red": "python3 /tmp/webhook_auth_qa_runner.py keycloak711-red.txt .venv/bin/pytest tests/test_keycloak_contract.py -q --tb=short",
+    "expanded_red": "python3 /tmp/webhook_auth_qa_runner.py keycloak711-contract-red.txt .venv/bin/pytest tests/test_keycloak_contract.py -q --tb=short",
+    "focused": "python3 /tmp/webhook_auth_qa_runner.py keycloak711-focused-green.txt .venv/bin/pytest tests/test_keycloak_contract.py -q --tb=short",
+    "full_fresh": "python3 /tmp/webhook_auth_qa_runner.py keycloak711-full-fresh.txt /tmp/webhook-keycloak711-candidate/fullvenv/bin/pytest -q --tb=short",
+    "format": "python3 /tmp/webhook_auth_qa_runner.py keycloak711-format.txt .venv/bin/ruff format --check .",
+    "lint": "python3 /tmp/webhook_auth_qa_runner.py keycloak711-lint.txt .venv/bin/ruff check .",
+    "mypy": "python3 /tmp/webhook_auth_qa_runner.py keycloak711-mypy.txt .venv/bin/mypy app",
+    "alembic": "python3 /tmp/webhook_auth_qa_runner.py keycloak711-alembic.txt .venv/bin/alembic heads",
+    "precommit": "python3 /tmp/webhook_auth_qa_runner.py keycloak711-precommit-final.txt .venv/bin/pre-commit run --all-files",
+    "runtime_resolver": "uv pip compile requirements.txt --output-file /tmp/webhook-keycloak711-candidate/runtime-resolved.txt",
+    "runtime_audit": "python3 /tmp/webhook_auth_qa_runner.py keycloak711-runtime-audit.txt /tmp/webhook-keycloak711-candidate/fullvenv/bin/pip-audit --disable-pip --no-deps -r /tmp/webhook-keycloak711-candidate/runtime-resolved.txt",
+    "dev_resolver": "uv pip compile requirements.txt requirements-dev.txt --output-file /tmp/webhook-keycloak711-candidate/dev-resolved.txt",
+    "dev_audit": "python3 /tmp/webhook_auth_qa_runner.py keycloak711-dev-audit.txt /tmp/webhook-keycloak711-candidate/fullvenv/bin/pip-audit --disable-pip --no-deps -r /tmp/webhook-keycloak711-candidate/dev-resolved.txt",
+    "actual_provider": "DYLD_LIBRARY_PATH=/opt/homebrew/opt/expat/lib /tmp/webhook-keycloak711-candidate/fullvenv/bin/python /tmp/webhook-keycloak711-candidate/provider_probe.py",
+    "actual_browser": "DYLD_LIBRARY_PATH=/opt/homebrew/opt/expat/lib /tmp/webhook-keycloak711-candidate/fullvenv/bin/python /tmp/webhook-keycloak711-candidate/browser_probe.py"
+  },
+  "remote_delivery_followup": {
+    "preserved_candidate": "2d082815ad304c52e2a0ecac56c0edf0e3967d3f",
+    "preserved_ref": "codex/evidence-webhook-2d08281",
+    "app_test_dependency_tree": "unchanged",
+    "remote_ci": "NOT_RUN at document commit",
+    "scope": "develop PR/CI/review/merge; trusted default bootstrap and publication excluded",
+    "first_remote_ci": "secret-scan FAIL: two file SHA-256 false positives; remaining required CI PASS",
+    "gitleaks": "8.24.3 historical exact fingerprints only; original RED2, exact GREEN0, same-path synthetic token RED"
+  }
+}

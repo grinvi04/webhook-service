@@ -1,0 +1,24 @@
+ruff check...............................................................Failed
+- hook id: ruff-check
+- exit code: 1
+
+E501 Line too long (106 > 100)
+   --> tests/test_unit_signatures.py:204:101
+    |
+202 |     req = _make_request({"Authorization": "Bearer validtoken"}, app_state=state)
+203 |
+204 |     with patch("app.dependencies._decode_keycloak_token", new=AsyncMock(return_value=expected)) as decode:
+    |                                                                                                     ^^^^^^
+205 |         result = await get_current_user(req)
+    |
+
+Found 1 error.
+
+ruff format..............................................................Failed
+- hook id: ruff-format
+- files were modified by this hook
+
+1 file reformatted, 33 files left unchanged
+
+mypy.....................................................................Passed
+pytest...................................................................Passed

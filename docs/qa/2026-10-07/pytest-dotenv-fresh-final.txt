@@ -1,0 +1,17 @@
+........................................................................ [ 92%]
+......                                                                   [100%]
+=============================== warnings summary ===============================
+../../../../tmp/webhook-qa-venv-20261007/lib/python3.11/site-packages/fastapi/testclient.py:1
+  /tmp/webhook-qa-venv-20261007/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+../../../../tmp/webhook-qa-venv-20261007/lib/python3.11/site-packages/starlette/testclient.py:53
+  /tmp/webhook-qa-venv-20261007/lib/python3.11/site-packages/starlette/testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+tests/test_idempotency.py::test_queue_failure_recovery_with_postgres_redis_and_worker
+  /Users/grinvi04/project/webhook-service/app/main.py:58: DeprecationWarning: Call to deprecated close. (Use aclose() instead) -- Deprecated since version 5.0.1.
+    await app.state.redis.close()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+78 passed, 3 warnings in 2.76s

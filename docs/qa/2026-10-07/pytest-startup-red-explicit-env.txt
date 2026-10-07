@@ -1,0 +1,123 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________________ test_pytest_startup_never_loads_a_dotenv_file _________________
+
+tmp_path = PosixPath('/private/var/folders/hq/2zd76ngn24l98vx3j_yvkfdr0000gn/T/pytest-of-grinvi04/pytest-8/test_pytest_startup_never_load0')
+
+    def test_pytest_startup_never_loads_a_dotenv_file(tmp_path):
+        assert any(entry.name == "dotenv" for entry in entry_points(group="pytest11"))
+        (tmp_path / ".env").write_text("QA_STARTUP_DOTENV_PROBE=from-synthetic-file\n")
+        (tmp_path / "sitecustomize.py").write_text(
+            "import os\n"
+            "import dotenv\n"
+            "os.environ['QA_STARTUP_INSTRUMENTED'] = 'yes'\n"
+            "def reject_dotenv_read(*args, **kwargs):\n"
+            "    raise RuntimeError('synthetic dotenv loader called during pytest startup')\n"
+            "dotenv.find_dotenv = reject_dotenv_read\n"
+            "dotenv.load_dotenv = reject_dotenv_read\n"
+        )
+        (tmp_path / "test_startup_probe.py").write_text(
+            "import os\n"
+            "def test_startup_without_dotenv(request):\n"
+            "    assert os.environ.get('QA_STARTUP_INSTRUMENTED') == 'yes'\n"
+            "    assert 'QA_STARTUP_DOTENV_PROBE' not in os.environ\n"
+            "    assert not request.config.pluginmanager.hasplugin('dotenv')\n"
+        )
+        environment = os.environ.copy()
+        for name in ("PYTEST_ADDOPTS", "PYTEST_DISABLE_PLUGIN_AUTOLOAD", "PYTEST_PLUGINS"):
+            environment.pop(name, None)
+        environment.pop("QA_STARTUP_DOTENV_PROBE", None)
+        environment["PYTHONPATH"] = str(tmp_path)
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "pytest",
+                "-c",
+                str(Path(__file__).resolve().parents[1] / "pytest.ini"),
+                "test_startup_probe.py",
+                "-q",
+            ],
+            cwd=tmp_path,
+            env=environment,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+>       assert result.returncode == 0, result.stdout + result.stderr
+E       AssertionError: Traceback (most recent call last):
+E           File "<frozen runpy>", line 198, in _run_module_as_main
+E           File "<frozen runpy>", line 88, in _run_code
+E           File "/Users/grinvi04/project/webhook-service/.venv/lib/python3.11/site-packages/pytest/__main__.py", line 9, in <module>
+E             raise SystemExit(pytest.console_main())
+E                              ^^^^^^^^^^^^^^^^^^^^^
+E           File "/Users/grinvi04/project/webhook-service/.venv/lib/python3.11/site-packages/_pytest/config/__init__.py", line 223, in console_main
+E             code = main()
+E                    ^^^^^^
+E           File "/Users/grinvi04/project/webhook-service/.venv/lib/python3.11/site-packages/_pytest/config/__init__.py", line 193, in main
+E             config = _prepareconfig(new_args, plugins)
+E                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/Users/grinvi04/project/webhook-service/.venv/lib/python3.11/site-packages/_pytest/config/__init__.py", line 361, in _prepareconfig
+E             config: Config = pluginmanager.hook.pytest_cmdline_parse(
+E                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/Users/grinvi04/project/webhook-service/.venv/lib/python3.11/site-packages/pluggy/_hooks.py", line 512, in __call__
+E             return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/Users/grinvi04/project/webhook-service/.venv/lib/python3.11/site-packages/pluggy/_manager.py", line 120, in _hookexec
+E             return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/Users/grinvi04/project/webhook-service/.venv/lib/python3.11/site-packages/pluggy/_callers.py", line 167, in _multicall
+E             raise exception
+E           File "/Users/grinvi04/project/webhook-service/.venv/lib/python3.11/site-packages/pluggy/_callers.py", line 139, in _multicall
+E             teardown.throw(exception)
+E           File "/Users/grinvi04/project/webhook-service/.venv/lib/python3.11/site-packages/_pytest/helpconfig.py", line 124, in pytest_cmdline_parse
+E             config = yield
+E                      ^^^^^
+E           File "/Users/grinvi04/project/webhook-service/.venv/lib/python3.11/site-packages/pluggy/_callers.py", line 121, in _multicall
+E             res = hook_impl.function(*args)
+E                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/Users/grinvi04/project/webhook-service/.venv/lib/python3.11/site-packages/_pytest/config/__init__.py", line 1192, in pytest_cmdline_parse
+E             self.parse(args)
+E           File "/Users/grinvi04/project/webhook-service/.venv/lib/python3.11/site-packages/_pytest/config/__init__.py", line 1562, in parse
+E             self.hook.pytest_load_initial_conftests(
+E           File "/Users/grinvi04/project/webhook-service/.venv/lib/python3.11/site-packages/pluggy/_hooks.py", line 512, in __call__
+E             return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/Users/grinvi04/project/webhook-service/.venv/lib/python3.11/site-packages/pluggy/_manager.py", line 120, in _hookexec
+E             return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/Users/grinvi04/project/webhook-service/.venv/lib/python3.11/site-packages/pluggy/_callers.py", line 167, in _multicall
+E             raise exception
+E           File "/Users/grinvi04/project/webhook-service/.venv/lib/python3.11/site-packages/pluggy/_callers.py", line 139, in _multicall
+E             teardown.throw(exception)
+E           File "/Users/grinvi04/project/webhook-service/.venv/lib/python3.11/site-packages/_pytest/warnings.py", line 128, in pytest_load_initial_conftests
+E             return (yield)
+E                     ^^^^^
+E           File "/Users/grinvi04/project/webhook-service/.venv/lib/python3.11/site-packages/pluggy/_callers.py", line 139, in _multicall
+E             teardown.throw(exception)
+E           File "/Users/grinvi04/project/webhook-service/.venv/lib/python3.11/site-packages/_pytest/capture.py", line 173, in pytest_load_initial_conftests
+E             yield
+E           File "/Users/grinvi04/project/webhook-service/.venv/lib/python3.11/site-packages/pluggy/_callers.py", line 121, in _multicall
+E             res = hook_impl.function(*args)
+E                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/Users/grinvi04/project/webhook-service/.venv/lib/python3.11/site-packages/pytest_dotenv/plugin.py", line 28, in pytest_load_initial_conftests
+E             load_dotenv(find_dotenv(filename, usecwd=True), override=_override)
+E                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/private/var/folders/hq/2zd76ngn24l98vx3j_yvkfdr0000gn/T/pytest-of-grinvi04/pytest-8/test_pytest_startup_never_load0/sitecustomize.py", line 5, in reject_dotenv_read
+E             raise RuntimeError('synthetic dotenv loader called during pytest startup')
+E         RuntimeError: synthetic dotenv loader called during pytest startup
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/Users/grinvi04/project/webhook-service/.venv/bin/python3.11', '-m', 'pytest', '-c', '/Users/g...c dotenv loader called during pytest startup\')\nRuntimeError: synthetic dotenv loader called during pytest startup\n').returncode
+
+tests/test_qa_isolation.py:192: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.11/site-packages/_pytest/config/__init__.py:1434
+  /Users/grinvi04/project/webhook-service/.venv/lib/python3.11/site-packages/_pytest/config/__init__.py:1434: PytestConfigWarning: Unknown config option: env_files
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_qa_isolation.py::test_pytest_startup_never_loads_a_dotenv_file
+1 failed, 1 warning in 0.58s
